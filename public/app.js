@@ -398,7 +398,12 @@ function renderCast(cast) {
     el(
       'header',
       { class: 'detail-head' },
-      el('p', { class: 'eyebrow' }, `${kindLabel(cast.kind)} · `, el('a', { href: cast.repo.url, target: '_blank', rel: 'noopener', text: cast.repo.fullName }), source),
+      el(
+        'div',
+        { class: 'detail-head-meta' },
+        el('p', { class: 'eyebrow' }, `${kindLabel(cast.kind)} · `, el('a', { href: cast.repo.url, target: '_blank', rel: 'noopener', text: cast.repo.fullName }), source),
+        el('a', { href: '#/new', class: 'btn-inline-new' }, '+ New Audio Summary'),
+      ),
       el('h2', { text: report?.title ?? cast.repo.fullName }),
       statusLine(cast),
     ),
@@ -410,13 +415,30 @@ function renderCast(cast) {
   ];
 }
 
+function showGenerator() {
+  clearTimeout(state.pollTimer);
+  state.currentId = null;
+  const genView = $('#generator-view');
+  const detail = $('#detail');
+  if (genView) genView.hidden = false;
+  if (detail) {
+    detail.hidden = true;
+    detail.replaceChildren();
+  }
+  loadList();
+}
+
 async function showCast(id) {
   clearTimeout(state.pollTimer);
   if (state.currentId !== id) {
     state.pollMs = POLL_MS_MIN;
   }
   state.currentId = id;
+  const genView = $('#generator-view');
   const detail = $('#detail');
+  if (genView) genView.hidden = true;
+  if (detail) detail.hidden = false;
+
   let cast;
   try {
     ({ cast } = await api(`/api/casts/${encodeURIComponent(id)}`));
@@ -426,6 +448,7 @@ async function showCast(id) {
   }
   if (state.currentId !== id) return;
   detail.replaceChildren(...renderCast(cast).flat(Infinity).filter(Boolean));
+  loadList();
   if (cast.status === 'queued' || cast.status === 'running') {
     const delay = state.pollMs;
     state.pollMs = Math.min(state.pollMs * 2, POLL_MS_MAX);
@@ -487,6 +510,8 @@ function route() {
   const match = /^#\/casts\/([^/]+)$/.exec(location.hash);
   if (match) {
     showCast(decodeURIComponent(match[1]));
+  } else {
+    showGenerator();
   }
 }
 

@@ -24,10 +24,29 @@
     </header>
 
     <!-- DASHBOARD APPLICATION LAYOUT -->
-    <main class="layout">
-      <div class="sidebar">
-        <section class="panel">
-          <h2>New Audio Summary</h2>
+    <div class="layout">
+      <!-- SIDEBAR: DEDICATED TO PREVIOUS SUMMARIES (HISTORY) -->
+      <aside class="sidebar">
+        <a href="#/new" class="btn btn-primary btn-new-summary">
+          <span>+ New Audio Summary</span>
+        </a>
+
+        <div class="sidebar-history">
+          <div class="sidebar-title-row">
+            <h3>Previous Summaries</h3>
+          </div>
+          <ul id="cast-list" class="cast-list"></ul>
+        </div>
+      </aside>
+
+      <!-- MAIN APP WORKSPACE: FOR GENERATING & PLAYING AUDIO SUMMARIES -->
+      <main class="main-content" id="main-content">
+        <!-- New Summary Generator View -->
+        <section class="panel generator-panel" id="generator-view">
+          <div class="generator-header">
+            <h2>Generate an Audio Summary</h2>
+            <p>Select any GitHub repository to analyze and listen to an AI-narrated audio briefing.</p>
+          </div>
           <form id="cast-form" autocomplete="off">
             <label>
               GitHub repository
@@ -62,21 +81,10 @@
           </form>
         </section>
 
-        <section class="panel">
-          <h2>Previous Summaries</h2>
-          <ul id="cast-list" class="cast-list"></ul>
-        </section>
-      </div>
-
-      <section class="panel detail" id="detail">
-        <div class="intro">
-          <h2>Listen to your codebase.</h2>
-          <p>
-            Generate an AI-narrated audio briefing for any repository. Gemma analyzes the code and ElevenLabs delivers an audio summary with an interactive transcript.
-          </p>
-        </div>
-      </section>
-    </main>
+        <!-- Audio Player & Transcript Detail View -->
+        <section class="panel detail" id="detail" hidden></section>
+      </main>
+    </div>
 
     <!-- TOKEN DIALOG (Fallback when OAuth is not configured) -->
     <dialog id="token-dialog">

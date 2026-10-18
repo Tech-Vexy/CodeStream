@@ -723,8 +723,79 @@ code {
 }
 
 .sidebar {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 1.25rem;
+  max-height: calc(100vh - 2.5rem);
+}
+
+.btn-new-summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.8rem 1rem;
+  box-sizing: border-box;
+}
+
+.sidebar-history {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.sidebar-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-title-row h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.main-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   gap: 1.25rem;
+}
+
+.generator-panel {
+  padding: 2rem;
+}
+
+.generator-header {
+  margin-bottom: 1.5rem;
+}
+
+.generator-header h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.generator-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .panel {
@@ -833,8 +904,26 @@ button:disabled {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 12rem);
+  padding-right: 0.25rem;
+}
+
+.cast-list::-webkit-scrollbar {
+  width: 5px;
+}
+.cast-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cast-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.cast-list::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
 .cast-list a {
@@ -919,6 +1008,36 @@ button:disabled {
 .detail-head h2 {
   font-size: 1.5rem;
   margin: 0.2rem 0 0.4rem;
+}
+
+.detail-head-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.btn-inline-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(124, 156, 255, 0.1);
+  border: 1px solid rgba(124, 156, 255, 0.25);
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-inline-new:hover {
+  background: rgba(124, 156, 255, 0.2);
+  border-color: var(--accent);
+  text-decoration: none;
 }
 
 .eyebrow {
