@@ -91,39 +91,19 @@ export async function codestreamWorkflow(input: WorkflowInput): Promise<void> {
       })(),
     ]);
 
-    // Parallel Stage: Now that Gemma's report is ready, run audio briefing and ElevenLabs Voice Agent sync in parallel
-    const postReportTasks: Promise<void>[] = [];
-
+    // Now that Gemma's report is ready, generate the narration script and record audio with ElevenLabs TTS
     if (input.audio) {
-      postReportTasks.push(
-        (async () => {
-          try {
-            await bookkeeping.setStage({ castId, stage: 'Writing the narration script' });
-            await model.writeScript({ castId });
-            await bookkeeping.setStage({ castId, stage: 'Recording audio with ElevenLabs' });
-            await voice.recordAudio({ castId });
-          } catch (err) {
-            if (isCancellation(err)) throw err;
-            // The written report is still worth delivering without audio.
-            await bookkeeping.addWarning({ castId, warning: `Audio could not be recorded: ${failureMessage(err)}` });
-          }
-        })(),
-      );
+      try {
+        await bookkeeping.setStage({ castId, stage: 'Gemma is writing the narration script' });
+        await model.writeScript({ castId });
+        await bookkeeping.setStage({ castId, stage: 'ElevenLabs is recording audio briefing' });
+        await voice.recordAudio({ castId });
+      } catch (err) {
+        if (isCancellation(err)) throw err;
+        // The written report is still worth delivering without audio.
+        await bookkeeping.addWarning({ castId, warning: `Audio could not be recorded: ${failureMessage(err)}` });
+      }
     }
-
-    postReportTasks.push(
-      (async () => {
-        try {
-          await bookkeeping.setStage({ castId, stage: 'Syncing Gemma analysis to ElevenLabs Voice Agent' });
-          await voice.syncVoiceAgent({ castId });
-        } catch (err) {
-          if (isCancellation(err)) throw err;
-          await bookkeeping.addWarning({ castId, warning: `Voice agent sync: ${failureMessage(err)}` });
-        }
-      })(),
-    );
-
-    await Promise.all(postReportTasks);
 
     await bookkeeping.completeCast({ castId });
   } catch (err) {
@@ -141,9 +121,3 @@ export async function qaWorkflow(input: QaInput): Promise<QaAnswer> {
   return qa.answerQuestion(input);
 }
 
-/**
- * Create a voice conversation session for a finished cast on the worker where the ElevenLabs key is configured.
- */
-export async function voiceSessionWorkflow(input: { castId: string }): Promise<{ signedUrl: string; agentId: string }> {
-  return voice.createVoiceSession(input);
-}

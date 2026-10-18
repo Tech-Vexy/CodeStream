@@ -2,7 +2,7 @@ import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as Sentry from '@sentry/node';
 import { NativeConnection, Worker } from '@temporalio/worker';
-import { ElevenLabsNarrator, ElevenLabsVoiceAgentManager } from '../audio/elevenlabs.js';
+import { ElevenLabsNarrator } from '../audio/elevenlabs.js';
 import { loadConfig } from '../config.js';
 import { Store } from '../db/store.js';
 import { VoyageEmbedder } from '../embeddings/voyage.js';
@@ -45,13 +45,6 @@ const activities = createActivities({
           apiKey: config.ELEVENLABS_API_KEY,
           voiceId: config.ELEVENLABS_VOICE_ID,
           modelId: config.ELEVENLABS_MODEL_ID,
-        }),
-        voiceAgent: new ElevenLabsVoiceAgentManager({
-          apiKey: config.ELEVENLABS_API_KEY,
-          voiceId: config.ELEVENLABS_VOICE_ID,
-          modelId: config.ELEVENLABS_MODEL_ID,
-          agentTtsModel: config.ELEVENLABS_AGENT_TTS_MODEL,
-          agentLlm: config.ELEVENLABS_AGENT_LLM,
         }),
       }
     : {}),

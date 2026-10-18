@@ -1,6 +1,6 @@
 import { posix } from 'node:path';
 import { log } from '@temporalio/activity';
-import type { SpeechSynthesizer, VoiceAgentService } from '../audio/elevenlabs.js';
+import type { SpeechSynthesizer } from '../audio/elevenlabs.js';
 import type { Store } from '../db/store.js';
 import type { CastDoc, CastKind, ContextDoc, QaAnswer } from '../domain.js';
 import { ConfigError, InputError } from '../errors.js';
@@ -29,8 +29,6 @@ export interface ActivityDeps {
   analyst: Analyst;
   /** Absent when ELEVENLABS_API_KEY is not configured. */
   speech?: SpeechSynthesizer;
-  /** Absent when ELEVENLABS_API_KEY is not configured. */
-  voiceAgent?: VoiceAgentService;
   /** Absent when VOYAGE_API_KEY is not configured; Q&A retrieval then falls back to chunk notes. */
   embedder?: Pick<VoyageEmbedder, 'embed' | 'model'>;
   /** Grounded Q&A over the stored chunks (src/qa/service.ts). */
@@ -336,26 +334,6 @@ export function createActivities(deps: ActivityDeps) {
       const { fileId, bytes } = await store.saveAudio(castId, audio, contentType);
       await store.updateCast(castId, { audio: { fileId, bytes, contentType } });
       log.info('Recorded audio', { castId, bytes, segments });
-    },
-
-    async syncVoiceAgent({ castId }: { castId: string }): Promise<void> {
-      if (!deps.voiceAgent) throw new ConfigError('ElevenLabs voice agent is not configured on the worker.');
-      const cast = await requireCast(castId);
-      if (!cast.report) throw new Error(`Cast ${castId} has no report to sync to ElevenLabs.`);
-      const { agentId } = await deps.voiceAgent.syncAgent(cast);
-      await store.updateCast(castId, { elevenAgent: { agentId, createdAt: new Date() } });
-      log.info('Synced Gemma analysis to ElevenLabs voice agent', { castId, agentId });
-    },
-
-    async createVoiceSession({ castId }: { castId: string }): Promise<{ signedUrl: string; agentId: string }> {
-      if (!deps.voiceAgent) throw new ConfigError('ELEVENLABS_API_KEY is not configured on the worker.');
-      const cast = await requireCast(castId);
-      if (!cast.report) throw new Error(`Cast ${castId} has no report for a voice session.`);
-      const session = await deps.voiceAgent.createSession(cast);
-      if (!cast.elevenAgent?.agentId) {
-        await store.updateCast(castId, { elevenAgent: { agentId: session.agentId, createdAt: new Date() } });
-      }
-      return session;
     },
 
     /** One grounded answer about a finished cast; the service persists the exchange as history. */

@@ -30,8 +30,6 @@ export interface AppDeps {
   listRepos?: (token?: string) => Promise<RepoSummary[]>;
   secureCookies?: boolean;
   publicDir?: string;
-  /** Voice session provider for ElevenLabs Conversational AI */
-  getVoiceSession?: (cast: CastDoc) => Promise<{ signedUrl: string; agentId: string }>;
 }
 
 const REF = /^(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$/;
@@ -288,57 +286,6 @@ export function createApp(deps: AppDeps) {
     try {
       const answer = await deps.askQuestion(cast, parsed.data.question);
       return c.json({ qa: { ...answer, question: parsed.data.question } }, 201);
-    } catch (err) {
-      if (err instanceof InputError) return c.json({ error: err.message }, 400);
-      throw err;
-    }
-  });
-
-  app.post('/api/casts/:id/voice/session', async (c) => {
-    const id = c.req.param('id');
-    const session = getSession(c);
-    const cast = await resolveCast(id, deps.store, authEnabled ? session?.user.id : undefined);
-    if (!cast) return c.json({ error: 'Cast not found.' }, 404);
-    if (cast.status !== 'ready') return c.json({ error: 'This cast is not ready for voice discussion yet.' }, 409);
-    if (!deps.getVoiceSession) {
-      return c.json({ error: 'ElevenLabs Voice Agent is not configured. Set ELEVENLABS_API_KEY to enable voice interaction.' }, 503);
-    }
-
-    try {
-      const voiceSession = await deps.getVoiceSession(cast);
-      if (!cast.elevenAgent?.agentId) {
-        await deps.store.updateCast(cast._id, { elevenAgent: { agentId: voiceSession.agentId, createdAt: new Date() } });
-      }
-      return c.json({ session: voiceSession });
-    } catch (err) {
-      if (err instanceof ConfigError) return c.json({ error: err.message }, 503);
-      if (err instanceof InputError) return c.json({ error: err.message }, 400);
-      throw err;
-    }
-  });
-
-  app.post('/api/casts/:id/tool/gemma', async (c) => {
-    const id = c.req.param('id');
-    const session = getSession(c);
-    const cast = await resolveCast(id, deps.store, authEnabled ? session?.user.id : undefined);
-    if (!cast) return c.json({ error: 'Cast not found.' }, 404);
-    if (cast.status !== 'ready') return c.json({ error: 'This cast is not ready for tool queries yet.' }, 409);
-
-    const body: unknown = await c.req.json().catch(() => ({}));
-    const parsed = questionSchema.safeParse(body);
-    if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      return c.json({ error: issue ? issue.message : 'Invalid request.' }, 400);
-    }
-
-    try {
-      const answer = await deps.askQuestion(cast, parsed.data.question);
-      return c.json({
-        tool: 'gemma_code_analyser',
-        question: parsed.data.question,
-        result: answer.answer,
-        citations: answer.citations,
-      });
     } catch (err) {
       if (err instanceof InputError) return c.json({ error: err.message }, 400);
       throw err;
