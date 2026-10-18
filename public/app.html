@@ -27,7 +27,7 @@
     <main class="layout">
       <div class="sidebar">
         <section class="panel">
-          <h2>New cast</h2>
+          <h2>New Audio Summary</h2>
           <form id="cast-form" autocomplete="off">
             <label>
               GitHub repository
@@ -57,25 +57,22 @@
               </label>
             </div>
 
-            <label class="check"><input type="checkbox" name="audio" checked /> Narrate it with ElevenLabs</label>
-
-            <button type="submit">Generate cast</button>
+            <button type="submit">Generate Audio Summary</button>
             <p class="form-error" id="form-error" hidden></p>
           </form>
         </section>
 
         <section class="panel">
-          <h2>Recent casts</h2>
+          <h2>Previous Summaries</h2>
           <ul id="cast-list" class="cast-list"></ul>
         </section>
       </div>
 
       <section class="panel detail" id="detail">
         <div class="intro">
-          <h2>Stop trusting blindly.</h2>
+          <h2>Listen to your codebase.</h2>
           <p>
-            Point CodeStream at a GitHub repo and Gemma reads it for you: a tour of the whole codebase, or a review of
-            the commits your agent just pushed, with the risky parts called out. Then stream it as a short audio briefing.
+            Generate an AI-narrated audio briefing for any repository. Gemma analyzes the code and ElevenLabs delivers an audio summary with an interactive transcript.
           </p>
         </div>
       </section>

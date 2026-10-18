@@ -186,12 +186,11 @@ async function _loadList() {
                 { href: `#/casts/${encodeURIComponent(cast.id)}`, class: cast.id === state.currentId ? 'active' : '' },
                 el('span', { class: 'cast-repo', text: cast.repo.fullName }),
                 el('span', { class: `pill ${cast.status}`, text: statusLabel(cast) }),
-                el('span', { class: 'cast-title', text: cast.title ?? kindLabel(cast.kind) }),
-                el('time', { datetime: cast.createdAt, text: `${kindLabel(cast.kind)} · ${timeAgo(cast.createdAt)}` }),
+                el('time', { datetime: cast.createdAt, text: timeAgo(cast.createdAt) }),
               ),
             ),
           )
-        : [el('li', { class: 'empty', text: 'No casts yet. Point CodeStream at a repo to get started.' })]),
+        : [el('li', { class: 'empty', text: 'No audio summaries yet.' })]),
     );
   } catch (err) {
     list.replaceChildren(el('li', { class: 'empty', text: err.message }));
@@ -233,9 +232,9 @@ function audioPlayerCard(cast) {
       'div',
       { class: 'audio-hero-title' },
       el('span', { class: 'audio-icon', text: '🎙️' }),
-      el('h3', { text: 'Spoken Audio Briefing' }),
+      el('h3', { text: 'Audio Summary' }),
     ),
-    el('span', { class: 'pill ready', text: 'ElevenLabs TTS' }),
+    el('span', { class: 'pill ready', text: 'ElevenLabs Audio' }),
   );
 
   if (cast.hasAudio) {
@@ -300,13 +299,13 @@ function audioPlayerCard(cast) {
         'div',
         { class: 'audio-generating' },
         soundwave,
-        el('p', { class: 'generating-text', text: 'Gemma is reading the codebase; ElevenLabs will synthesize the audio briefing shortly…' }),
+        el('p', { class: 'generating-text', text: 'Gemma is analyzing the code and ElevenLabs is generating your audio summary…' }),
       ),
     );
   } else {
     card.append(
       header,
-      el('p', { class: 'muted', text: 'Audio was not generated for this cast (audio narration was disabled or ElevenLabs key was not set).' }),
+      el('p', { class: 'muted', text: 'Audio was not generated for this summary.' }),
     );
   }
 
@@ -358,17 +357,7 @@ function transcriptCard(cast) {
   return card;
 }
 
-// ---------------------------------------------------------------- Concise Overview & Risks
-
-function summaryCard(report) {
-  if (!report?.tldr) return null;
-  return el(
-    'section',
-    { class: 'quick-summary-card' },
-    el('h3', { text: 'TL;DR' }),
-    el('div', { class: 'summary-prose' }, prose(report.tldr)),
-  );
-}
+// ---------------------------------------------------------------- Risks Alert
 
 function riskAlertCard(report) {
   if (!report?.risks?.length) return null;
@@ -400,74 +389,6 @@ function riskAlertCard(report) {
   );
 }
 
-// ---------------------------------------------------------------- Grounded Q&A
-
-const qaItem = (exchange) =>
-  el(
-    'li',
-    { class: 'qa-item' },
-    el('p', { class: 'qa-question' }, el('strong', { text: 'Q: ' }), exchange.question),
-    el('div', { class: 'qa-answer' }, prose(exchange.answer)),
-    exchange.citations?.length && pathList(exchange.citations),
-  );
-
-function qaPanel(cast) {
-  const list = el('ul', { class: 'qa-list' }, [el('li', { class: 'empty', text: 'Loading questions…' })]);
-  const input = el('input', {
-    name: 'question',
-    placeholder: 'Ask a specific technical question about this codebase…',
-    disabled: cast.status !== 'ready',
-  });
-  const button = el('button', { type: 'submit', text: 'Ask', disabled: cast.status !== 'ready' });
-  const error = el('p', { class: 'form-error', hidden: true });
-  const form = el('form', { class: 'qa-form' }, input, button, error);
-
-  async function loadHistory() {
-    try {
-      const { qa } = await api(`/api/casts/${encodeURIComponent(cast.id)}/qa`);
-      const ordered = [...qa].reverse();
-      list.replaceChildren(
-        ...(ordered.length ? ordered.map(qaItem) : [el('li', { class: 'empty', text: 'No questions asked yet. Ask Gemma a question below.' })]),
-      );
-    } catch {
-      list.replaceChildren();
-    }
-  }
-
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const question = input.value.trim();
-    if (!question || button.disabled) return;
-    error.hidden = true;
-    button.disabled = true;
-    button.textContent = 'Thinking…';
-    try {
-      const { qa } = await api(`/api/casts/${encodeURIComponent(cast.id)}/qa`, {
-        method: 'POST',
-        body: JSON.stringify({ question }),
-      });
-      input.value = '';
-      const previous = [...list.children].filter((child) => !child.classList.contains('empty'));
-      list.replaceChildren(qaItem(qa), ...previous);
-    } catch (err) {
-      error.textContent = err.message;
-      error.hidden = false;
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Ask';
-    }
-  });
-
-  loadHistory();
-  return el(
-    'section',
-    { class: 'qa-section' },
-    el('h3', { text: 'Have Questions? Ask Gemma' }),
-    list,
-    form,
-  );
-}
-
 // ---------------------------------------------------------------- Render Cast
 
 function renderCast(cast) {
@@ -481,13 +402,11 @@ function renderCast(cast) {
       el('h2', { text: report?.title ?? cast.repo.fullName }),
       statusLine(cast),
     ),
-    cast.status === 'failed' && el('p', { class: 'error-box', text: cast.error ?? 'This cast failed.' }),
+    cast.status === 'failed' && el('p', { class: 'error-box', text: cast.error ?? 'This audio summary failed to generate.' }),
     cast.warnings?.length && el('ul', { class: 'warnings' }, cast.warnings.map((w) => el('li', { text: w }))),
-    summaryCard(report),
-    riskAlertCard(report),
     audioPlayerCard(cast),
     transcriptCard(cast),
-    qaPanel(cast),
+    riskAlertCard(report),
   ];
 }
 
@@ -537,7 +456,7 @@ function setupForm() {
     const payload = {
       repoUrl: data.get('repoUrl').trim(),
       kind,
-      audio: data.get('audio') === 'on',
+      audio: true, // Always generate audio immediately
     };
     const ref = data.get('ref').trim();
     if (ref) payload.ref = ref;
@@ -549,6 +468,7 @@ function setupForm() {
 
     const button = form.querySelector('button[type="submit"]');
     button.disabled = true;
+    button.textContent = 'Generating Audio Summary…';
     try {
       const { cast } = await api('/api/casts', { method: 'POST', body: JSON.stringify(payload) });
       location.hash = `#/casts/${encodeURIComponent(cast.id)}`;
@@ -558,6 +478,7 @@ function setupForm() {
       error.hidden = false;
     } finally {
       button.disabled = false;
+      button.textContent = 'Generate Audio Summary';
     }
   });
 }
