@@ -111,7 +111,7 @@ export function createApp(deps: AppDeps) {
   app.post('/auth/logout', (c) => new Response(null, { status: 204, headers: { 'Set-Cookie': cookie('codestream_session', '', 0) } }));
   app.get('/auth/me', (c) => {
     const session = getSession(c);
-    return c.json(session ? { user: session.user } : { user: null });
+    return c.json({ user: session ? session.user : null, authEnabled });
   });
 
   app.use('/api/*', async (c, next) => {

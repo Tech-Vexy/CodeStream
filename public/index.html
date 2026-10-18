@@ -3,21 +3,260 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CodeStream</title>
+    <title>CodeStream · AI Codebase Tours & Reviews</title>
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
+    <!-- TOP NAVIGATION -->
     <header class="top">
-      <a class="brand" href="#/">
-        <span class="logo" aria-hidden="true"></span>
-        CodeStream
-      </a>
-      <p class="tagline">Know what your coding agent actually built.</p>
+      <div class="brand-group">
+        <a class="brand" href="#/">
+          <span class="logo" aria-hidden="true"></span>
+          CodeStream
+        </a>
+        <nav class="nav-links" id="nav-links">
+          <a href="#features" class="nav-link">Features</a>
+          <a href="#how-it-works" class="nav-link">How It Works</a>
+          <a href="#preview" class="nav-link">Preview</a>
+          <a href="#/app" class="nav-link app-nav-link" id="nav-dashboard-link" hidden>Dashboard</a>
+        </nav>
+      </div>
       <div id="account" class="account"></div>
     </header>
 
-    <main class="layout">
+    <!-- LANDING VIEW (Shown to unauthenticated visitors or via #/welcome) -->
+    <div id="landing-view" class="landing-view">
+      <!-- HERO SECTION -->
+      <section class="hero">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          <span>Know What Your Coding Agent Actually Built</span>
+        </div>
+        <h1 class="hero-title">
+          Stop blindly trusting<br />
+          <span class="gradient-text">agent-written code.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Autonomous coding agents can produce thousands of lines in seconds. CodeStream analyzes the full architecture,
+          pinpoints concrete risks, generates narrated audio briefings, and answers your questions with source-cited precision.
+        </p>
+        <div class="hero-actions">
+          <a href="/auth/github" class="btn btn-primary btn-large btn-github" id="hero-get-started">
+            <svg class="github-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>Get Started with GitHub</span>
+          </a>
+          <a href="#preview" class="btn btn-secondary btn-large">
+            <span>Explore Preview</span>
+          </a>
+        </div>
+        <p class="hero-microcopy">
+          Works with public and private repositories &middot; Zero credentials leaked to LLMs &middot; No credit card required
+        </p>
+      </section>
+
+      <!-- LIVE PREVIEW SHOWCASE -->
+      <section id="preview" class="preview-section">
+        <div class="mockup-window">
+          <div class="mockup-header">
+            <div class="mockup-dots">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <div class="mockup-tab">
+              <span class="mockup-repo">facebook/react</span>
+              <span class="pill ready">Ready</span>
+            </div>
+            <div class="mockup-meta">Branch: main &middot; commit 7a3f89b</div>
+          </div>
+          <div class="mockup-body">
+            <!-- Audio Bar Mockup -->
+            <div class="mockup-audio">
+              <div class="audio-play-btn" aria-label="Play audio briefing">▶</div>
+              <div class="audio-wave">
+                <span class="bar bar-1"></span><span class="bar bar-2"></span>
+                <span class="bar bar-3"></span><span class="bar bar-4"></span>
+                <span class="bar bar-5"></span><span class="bar bar-6"></span>
+                <span class="bar bar-7"></span><span class="bar bar-8"></span>
+                <span class="bar bar-9"></span><span class="bar bar-10"></span>
+                <span class="bar bar-11"></span><span class="bar bar-12"></span>
+                <span class="bar bar-13"></span><span class="bar bar-14"></span>
+              </div>
+              <span class="audio-timer">03:42 / 05:18</span>
+              <span class="audio-badge">ElevenLabs Voice Briefing</span>
+            </div>
+
+            <!-- Content Split Preview -->
+            <div class="mockup-grid">
+              <div class="mockup-panel">
+                <h4>Architecture &amp; Components</h4>
+                <p class="mockup-prose">
+                  React is structured around a declarative component model decoupled from execution targets. Core reconciliation logic coordinates fiber trees, lane prioritization, and work loops.
+                </p>
+                <div class="mockup-chips">
+                  <span class="chip">TypeScript</span>
+                  <span class="chip">Fiber Reconciler</span>
+                  <span class="chip">Concurrent Lanes</span>
+                  <span class="chip">Scheduler</span>
+                </div>
+              </div>
+
+              <div class="mockup-panel">
+                <h4>Audited Risks</h4>
+                <ul class="mockup-risks">
+                  <li class="mockup-risk high">
+                    <span class="sev-tag">high</span>
+                    <div>
+                      <strong>Unhandled error boundary propagation</strong>
+                      <p>Async lane transitions can bypass top-level recovery boundaries under heavy thread load.</p>
+                      <code>packages/react-reconciler/ReactFiberWorkLoop.js</code>
+                    </div>
+                  </li>
+                  <li class="mockup-risk medium">
+                    <span class="sev-tag">medium</span>
+                    <div>
+                      <strong>Fallback scheduler starvation</strong>
+                      <p>Timer resolution degrades under nested microtasks.</p>
+                      <code>packages/scheduler/Scheduler.js</code>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURES SECTION -->
+      <section id="features" class="features-section">
+        <div class="section-header">
+          <h2 class="section-title">Built for the age of autonomous coding agents</h2>
+          <p class="section-subtitle">
+            Everything you need to review, understand, and trust agent-generated code before shipping.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🗺️</div>
+            <h3>Codebase Guided Tours</h3>
+            <p>
+              Dissect entire repositories in minutes. Get clear architectural summaries, component responsibility breakdowns,
+              data flow paths, and prioritized reading orders for human reviewers.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>Commit &amp; PR Audits</h3>
+            <p>
+              Inspect ranges of commits and diffs with surgical precision. Automatically catch modified manifests,
+              untested files, breaking changes, and an interactive "Before You Trust It" checklist.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">🎙️</div>
+            <h3>Narrated Audio Briefings</h3>
+            <p>
+              Listen to your code briefings like a podcast on your commute or during breaks. Scripts are written for the ear
+              and voiced by ElevenLabs with instant playback and scrubbing.
+            </p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <h3>Grounded Q&amp;A with Citations</h3>
+            <p>
+              Ask questions directly about any finished cast. Responses are grounded in Voyage AI code embeddings and
+              strictly cited against real files and function signatures—no hallucinations.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECURITY & RELIABILITY SECTION -->
+      <section class="security-section">
+        <div class="security-card">
+          <div class="security-content">
+            <span class="badge-dot green"></span>
+            <h3>Security by Design: Zero-Leak Redaction</h3>
+            <p>
+              CodeStream deterministically scans for credential files (<code>.env</code>, private keys, certificates,
+              service accounts) and quarantines them. They are <strong>never sent to the LLM</strong>, and are instead
+              flagged directly in your audit report.
+            </p>
+          </div>
+          <div class="security-content">
+            <span class="badge-dot purple"></span>
+            <h3>Enterprise Workflow Reliability</h3>
+            <p>
+              Powered by <strong>Temporal</strong> distributed workflows. Ingestion, model calls, and voice synthesis ride
+              out rate limits and provider hiccups with resilient exponential backoffs and durable state machines.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS SECTION -->
+      <section id="how-it-works" class="steps-section">
+        <div class="section-header">
+          <h2 class="section-title">How CodeStream Works</h2>
+          <p class="section-subtitle">From git repository to actionable briefing in three automated steps.</p>
+        </div>
+
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-num">01</div>
+            <h4>Connect Your Repository</h4>
+            <p>Paste any public or private GitHub repository URL. Choose a branch, commit SHA, or diff range.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-num">02</div>
+            <h4>Multi-Agent Deep Analysis</h4>
+            <p>Mastra AI agents running Google Gemma 4 read, summarize, and synthesize code chunks with strict grounding.</p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-num">03</div>
+            <h4>Listen, Inspect &amp; Interrogate</h4>
+            <p>Stream the narrated audio, review concrete risks, and ask technical questions with verified citations.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CALL TO ACTION BANNER -->
+      <section class="cta-banner">
+        <h2>Stop guessing what your agent changed.</h2>
+        <p>Start listening to your codebase and review pull requests with complete confidence.</p>
+        <a href="/auth/github" class="btn btn-primary btn-large btn-github">
+          <svg class="github-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>Get Started with GitHub</span>
+        </a>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="site-footer">
+        <div class="footer-content">
+          <div class="brand">
+            <span class="logo" aria-hidden="true"></span>
+            CodeStream
+          </div>
+          <p class="footer-text">
+            Engineered with Hono, Temporal, Mastra, Google Gemma 4, ElevenLabs, and MongoDB.
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- MAIN APP DASHBOARD (Shown when logged in or in application mode) -->
+    <main id="app-view" class="layout app-view" hidden>
       <div class="sidebar">
         <section class="panel">
           <h2>New cast</h2>
@@ -74,6 +313,7 @@
       </section>
     </main>
 
+    <!-- TOKEN DIALOG (Fallback when OAuth is not configured) -->
     <dialog id="token-dialog">
       <form method="dialog">
         <h2>API token required</h2>

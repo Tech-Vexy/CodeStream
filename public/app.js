@@ -2,6 +2,7 @@ const TOKEN_KEY = 'codestream.token';
 const POLL_MS_MIN = 3000;
 const POLL_MS_MAX = 30000;
 const state = { currentId: null, pollTimer: null, pollMs: POLL_MS_MIN };
+const authState = { user: null, authEnabled: false, checked: false };
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -58,6 +59,76 @@ function timeAgo(iso) {
   return '';
 }
 
+// ---------------------------------------------------------------- Auth & Views
+
+function showLanding() {
+  const landing = $('#landing-view');
+  const app = $('#app-view');
+  if (landing) landing.hidden = false;
+  if (app) app.hidden = true;
+  const navDash = $('#nav-dashboard-link');
+  if (navDash) navDash.hidden = !authState.user;
+}
+
+function showApp() {
+  const landing = $('#landing-view');
+  const app = $('#app-view');
+  if (landing) landing.hidden = true;
+  if (app) app.hidden = false;
+  const navDash = $('#nav-dashboard-link');
+  if (navDash) navDash.hidden = false;
+}
+
+function renderAccount() {
+  const accountEl = $('#account');
+  if (!accountEl) return;
+  if (authState.user) {
+    const avatar = authState.user.avatarUrl
+      ? el('img', { src: authState.user.avatarUrl, class: 'user-avatar', alt: authState.user.login })
+      : el('span', { class: 'user-avatar', text: authState.user.login.slice(0, 1).toUpperCase() });
+    const signoutBtn = el('button', {
+      class: 'btn-signout',
+      text: 'Sign out',
+      onclick: async () => {
+        await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
+        authState.user = null;
+        renderAccount();
+        showLanding();
+        location.hash = '#/';
+      },
+    });
+    accountEl.replaceChildren(
+      el('div', { class: 'user-badge' }, avatar, el('span', { class: 'user-login', text: authState.user.login }), signoutBtn)
+    );
+  } else if (authState.authEnabled) {
+    accountEl.replaceChildren(
+      el(
+        'a',
+        { href: '/auth/github', class: 'btn btn-github btn-signout' },
+        el('span', { text: 'Sign in with GitHub' })
+      )
+    );
+  } else {
+    accountEl.replaceChildren();
+  }
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch('/auth/me');
+    if (res.ok) {
+      const data = await res.json();
+      authState.user = data.user;
+      authState.authEnabled = Boolean(data.authEnabled);
+    }
+  } catch {
+    // network error
+  } finally {
+    authState.checked = true;
+  }
+  renderAccount();
+}
+
 function askForToken() {
   const dialog = $('#token-dialog');
   const input = dialog.querySelector('input');
@@ -87,8 +158,11 @@ async function api(path, options = {}) {
   if (res.status === 401) {
     const message = (await res.clone().json().catch(() => ({}))).error;
     if (String(message).includes('Sign in with GitHub')) {
-      location.href = '/auth/github';
-      throw new Error('Redirecting to GitHub sign-in.');
+      authState.user = null;
+      authState.authEnabled = true;
+      renderAccount();
+      showLanding();
+      throw new Error('Sign in with GitHub to use CodeStream.');
     }
     if (await askForToken()) return api(path, options);
     throw new Error('This deployment requires an API token.');
@@ -110,10 +184,34 @@ function statusLabel(cast) {
   return 'Working';
 }
 
-// ---------------------------------------------------------------- list
+// ---------------------------------------------------------------- Repositories
+
+let reposLoaded = false;
+async function loadRepos() {
+  if (reposLoaded || !authState.user) return;
+  try {
+    const data = await api('/api/repos');
+    if (data?.repos) {
+      const datalist = $('#repo-options');
+      if (datalist) {
+        datalist.replaceChildren(
+          ...data.repos.map((r) =>
+            el('option', { value: r.fullName, text: r.description ? `${r.fullName} — ${r.description}` : r.fullName })
+          )
+        );
+        reposLoaded = true;
+      }
+    }
+  } catch {
+    // Repository browsing may be unconfigured or user has no repos
+  }
+}
+
+// ---------------------------------------------------------------- List
 
 async function _loadList() {
   const list = $('#cast-list');
+  if (!list) return;
   try {
     const { casts } = await api('/api/casts');
     list.replaceChildren(
@@ -139,15 +237,14 @@ async function _loadList() {
   }
 }
 
-// Debounced: rapid back-to-back calls (e.g. form submit sets the hash which fires hashchange)
-// collapse into a single fetch, preventing the list from flashing with stale then fresh data.
+// Debounced: rapid back-to-back calls collapse into a single fetch.
 let _loadListTimer = null;
 function loadList() {
   clearTimeout(_loadListTimer);
   _loadListTimer = setTimeout(() => _loadList(), 80);
 }
 
-// ---------------------------------------------------------------- detail
+// ---------------------------------------------------------------- Detail
 
 const section = (title, ...content) => el('section', { class: 'block' }, el('h3', { text: title }), content);
 
@@ -256,7 +353,6 @@ function qaPanel(cast) {
   async function loadHistory() {
     try {
       const { qa } = await api(`/api/casts/${encodeURIComponent(cast.id)}/qa`);
-      // API returns oldest-first; display newest-first to match how new answers are prepended.
       const ordered = [...qa].reverse();
       list.replaceChildren(
         ...(ordered.length ? ordered.map(qaItem) : [el('li', { class: 'empty', text: 'No questions yet. Ask the first one below.' })]),
@@ -316,7 +412,6 @@ function renderCast(cast) {
 
 async function showCast(id) {
   clearTimeout(state.pollTimer);
-  // Reset back-off whenever the user navigates to a different cast.
   if (state.currentId !== id) state.pollMs = POLL_MS_MIN;
   state.currentId = id;
   const detail = $('#detail');
@@ -331,7 +426,6 @@ async function showCast(id) {
   detail.replaceChildren(...renderCast(cast).flat(Infinity).filter(Boolean));
   if (cast.status === 'queued' || cast.status === 'running') {
     const delay = state.pollMs;
-    // Double the interval each round, capped at POLL_MS_MAX (30 s).
     state.pollMs = Math.min(state.pollMs * 2, POLL_MS_MAX);
     state.pollTimer = setTimeout(() => {
       showCast(id);
@@ -340,10 +434,11 @@ async function showCast(id) {
   }
 }
 
-// ---------------------------------------------------------------- form + routing
+// ---------------------------------------------------------------- Form & Routing
 
 function setupForm() {
   const form = $('#cast-form');
+  if (!form) return;
   const changesOnly = form.querySelector('.changes-only');
   const error = $('#form-error');
 
@@ -384,15 +479,57 @@ function setupForm() {
   });
 }
 
-function route() {
-  const match = /^#\/casts\/([^/]+)$/.exec(location.hash);
-  if (match) showCast(decodeURIComponent(match[1]));
+function setupMockupPlay() {
+  const playBtn = $('.audio-play-btn');
+  if (!playBtn) return;
+  playBtn.addEventListener('click', () => {
+    const isPlaying = playBtn.textContent === '⏸';
+    playBtn.textContent = isPlaying ? '▶' : '⏸';
+    const wave = $('.audio-wave');
+    if (wave) {
+      wave.style.filter = isPlaying ? 'none' : 'brightness(1.3) drop-shadow(0 0 6px var(--accent))';
+    }
+  });
 }
 
+async function route() {
+  if (!authState.checked) {
+    await checkAuth();
+  }
+
+  const hash = location.hash;
+
+  // Unauthenticated visitors seeing landing page
+  if (authState.authEnabled && !authState.user) {
+    showLanding();
+    return;
+  }
+
+  // Explicit landing routes
+  if (hash === '#/welcome' || hash === '#features' || hash === '#how-it-works' || hash === '#preview') {
+    showLanding();
+    return;
+  }
+
+  // User is authenticated or OAuth is open: show main dashboard
+  showApp();
+  loadList();
+  loadRepos();
+
+  const match = /^#\/casts\/([^/]+)$/.exec(hash);
+  if (match) {
+    showCast(decodeURIComponent(match[1]));
+  }
+}
+
+// Initialization
 setupForm();
+setupMockupPlay();
 window.addEventListener('hashchange', () => {
   route();
-  loadList();
 });
-loadList();
-route();
+
+// Boot
+checkAuth().then(() => {
+  route();
+});
