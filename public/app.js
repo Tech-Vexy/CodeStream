@@ -348,7 +348,228 @@ function qaPanel(cast) {
   });
 
   loadHistory();
-  return section('Ask about this cast', list, form);
+  return section('Ask about this cast (Text Mode)', list, form);
+}
+
+// ---------------------------------------------------------------- Voice Agent
+
+let activeVoiceSession = null;
+let activeVoiceCastId = null;
+
+function voiceAgentPanel(cast) {
+  const container = el('div', { class: 'voice-panel' });
+  const isReady = cast.status === 'ready';
+  const statusPill = el('span', {
+    class: `pill ${isReady ? 'ready' : 'running'}`,
+    text: isReady ? 'Ready to discuss' : 'Cast processing…',
+  });
+
+  const header = el(
+    'div',
+    { class: 'voice-header' },
+    el(
+      'div',
+      { class: 'voice-title-group' },
+      el('span', { class: 'voice-badge', text: 'Voice Agent' }),
+      el('h4', { text: 'ElevenLabs Voice Agent' }),
+      el('p', {
+        class: 'voice-desc',
+        text: 'Interactive spoken discussion. Powered by ElevenLabs Conversational AI using Google Gemma 4 Code Analyser tool for grounded technical answers.',
+      }),
+    ),
+    statusPill,
+  );
+
+  const startBtn = el('button', {
+    class: 'voice-btn start',
+    text: '🎙️ Start Voice Conversation',
+    disabled: !isReady,
+  });
+
+  const endBtn = el('button', {
+    class: 'voice-btn end',
+    text: 'End Conversation',
+    hidden: true,
+  });
+
+  const muteBtn = el('button', {
+    class: 'voice-btn mute',
+    text: 'Mute',
+    hidden: true,
+  });
+
+  let isMuted = false;
+
+  const visualizer = el(
+    'div',
+    { class: 'voice-visualizer', hidden: true },
+    el('span', { class: 'wave wave-1' }),
+    el('span', { class: 'wave wave-2' }),
+    el('span', { class: 'wave wave-3' }),
+    el('span', { class: 'wave wave-4' }),
+    el('span', { class: 'wave wave-5' }),
+  );
+
+  const toolBox = el('div', { class: 'tool-call-banner', hidden: true });
+  const errorBox = el('p', { class: 'form-error', hidden: true });
+
+  const transcriptList = el('div', { class: 'voice-transcript-list' });
+  const transcriptDetails = el(
+    'details',
+    { class: 'voice-transcript-details', open: true },
+    el('summary', { text: 'Live Conversation Transcript & Gemma Tool Invocations' }),
+    transcriptList,
+  );
+
+  function addTranscriptEntry(speaker, text, citations = []) {
+    const isTool = speaker === 'tool';
+    const isAgent = speaker === 'ai' || speaker === 'agent';
+    const speakerLabel = isTool ? 'Gemma Tool' : isAgent ? 'ElevenLabs Agent' : 'You';
+    const badgeClass = isTool ? 'tool-pill' : isAgent ? 'agent-pill' : 'user-pill';
+
+    const entry = el(
+      'div',
+      { class: `transcript-entry ${isTool ? 'tool' : isAgent ? 'agent' : 'user'}` },
+      el(
+        'div',
+        { class: 'transcript-meta' },
+        el('span', { class: `speaker-pill ${badgeClass}`, text: speakerLabel }),
+        el('time', { text: new Date().toLocaleTimeString() }),
+      ),
+      el('div', { class: 'transcript-body' }, prose(text)),
+      citations?.length ? pathList(citations) : null,
+    );
+    transcriptList.appendChild(entry);
+    transcriptList.scrollTop = transcriptList.scrollHeight;
+  }
+
+  startBtn.addEventListener('click', async () => {
+    errorBox.hidden = true;
+    startBtn.disabled = true;
+    startBtn.textContent = 'Connecting to ElevenLabs…';
+    statusPill.textContent = 'Connecting…';
+    statusPill.className = 'pill running';
+
+    try {
+      const { session } = await api(`/api/casts/${encodeURIComponent(cast.id)}/voice/session`, { method: 'POST' });
+      const ConvClass = window.ElevenLabsClient?.Conversation;
+      if (!ConvClass) {
+        throw new Error('ElevenLabs client library could not be loaded. Please refresh or check network.');
+      }
+
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      activeVoiceCastId = cast.id;
+      activeVoiceSession = await ConvClass.startSession({
+        signedUrl: session.signedUrl,
+        clientTools: {
+          gemma_code_analyser: async ({ question }) => {
+            statusPill.textContent = 'Gemma Analyzing…';
+            statusPill.className = 'pill queued';
+            toolBox.hidden = false;
+            toolBox.replaceChildren(
+              el('span', { class: 'tool-icon', text: '⚡' }),
+              el('span', { text: `Gemma Code Analyser invoked: "${question}"` }),
+            );
+
+            try {
+              const res = await api(`/api/casts/${encodeURIComponent(cast.id)}/tool/gemma`, {
+                method: 'POST',
+                body: JSON.stringify({ question }),
+              });
+              addTranscriptEntry('tool', `Gemma grounded answer:\n${res.result}`, res.citations);
+              return res.result;
+            } catch (err) {
+              const errMsg = `Gemma analysis error: ${err.message}`;
+              addTranscriptEntry('tool', errMsg);
+              return errMsg;
+            } finally {
+              toolBox.hidden = true;
+              statusPill.textContent = 'Listening…';
+              statusPill.className = 'pill ready';
+            }
+          },
+        },
+        onConnect: () => {
+          statusPill.textContent = 'Connected · Listening';
+          statusPill.className = 'pill ready';
+          startBtn.hidden = true;
+          endBtn.hidden = false;
+          muteBtn.hidden = false;
+          visualizer.hidden = false;
+        },
+        onDisconnect: () => {
+          statusPill.textContent = 'Call Ended';
+          statusPill.className = 'pill';
+          startBtn.hidden = false;
+          startBtn.disabled = false;
+          startBtn.textContent = '🎙️ Start Voice Conversation';
+          endBtn.hidden = true;
+          muteBtn.hidden = true;
+          visualizer.hidden = true;
+          visualizer.classList.remove('speaking');
+          activeVoiceSession = null;
+          activeVoiceCastId = null;
+        },
+        onError: (err) => {
+          errorBox.textContent = String(err?.message || err || 'Voice connection error.');
+          errorBox.hidden = false;
+          statusPill.textContent = 'Error';
+          statusPill.className = 'pill failed';
+        },
+        onMessage: (msg) => {
+          if (msg?.message) {
+            addTranscriptEntry(msg.source || 'agent', msg.message);
+          }
+        },
+        onModeChange: (mode) => {
+          const m = mode?.mode || mode;
+          if (m === 'speaking') {
+            statusPill.textContent = 'Agent Speaking…';
+            statusPill.className = 'pill running';
+            visualizer.classList.add('speaking');
+          } else {
+            statusPill.textContent = 'Listening…';
+            statusPill.className = 'pill ready';
+            visualizer.classList.remove('speaking');
+          }
+        },
+      });
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.hidden = false;
+      statusPill.textContent = 'Failed to connect';
+      statusPill.className = 'pill failed';
+      startBtn.disabled = false;
+      startBtn.textContent = '🎙️ Start Voice Conversation';
+      activeVoiceSession = null;
+      activeVoiceCastId = null;
+    }
+  });
+
+  endBtn.addEventListener('click', async () => {
+    if (activeVoiceSession) {
+      try {
+        await activeVoiceSession.endSession();
+      } catch {}
+      activeVoiceSession = null;
+      activeVoiceCastId = null;
+    }
+  });
+
+  muteBtn.addEventListener('click', () => {
+    isMuted = !isMuted;
+    muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
+    if (activeVoiceSession?.setVolume) {
+      try {
+        activeVoiceSession.setVolume({ volume: isMuted ? 0 : 1 });
+      } catch {}
+    }
+  });
+
+  const controls = el('div', { class: 'voice-controls' }, startBtn, endBtn, muteBtn, visualizer);
+  container.append(header, controls, toolBox, errorBox, transcriptDetails);
+  return section('Interactive Voice Briefing', container);
 }
 
 function renderCast(cast) {
@@ -365,6 +586,7 @@ function renderCast(cast) {
     cast.status === 'failed' && el('p', { class: 'error-box', text: cast.error ?? 'This cast failed.' }),
     cast.hasAudio && el('audio', { controls: true, preload: 'metadata', src: audioUrl(cast.id) }),
     cast.warnings?.length && el('ul', { class: 'warnings' }, cast.warnings.map((w) => el('li', { text: w }))),
+    voiceAgentPanel(cast),
     report && (cast.kind === 'codebase' ? codebaseSections(report) : changeSections(report)),
     cast.script && el('details', { class: 'script' }, el('summary', { text: 'Narration script' }), prose(cast.script)),
     qaPanel(cast),
@@ -373,7 +595,16 @@ function renderCast(cast) {
 
 async function showCast(id) {
   clearTimeout(state.pollTimer);
-  if (state.currentId !== id) state.pollMs = POLL_MS_MIN;
+  if (state.currentId !== id) {
+    state.pollMs = POLL_MS_MIN;
+    if (activeVoiceSession && activeVoiceCastId !== id) {
+      try {
+        await activeVoiceSession.endSession();
+      } catch {}
+      activeVoiceSession = null;
+      activeVoiceCastId = null;
+    }
+  }
   state.currentId = id;
   const detail = $('#detail');
   let cast;

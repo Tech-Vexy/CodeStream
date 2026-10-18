@@ -149,4 +149,107 @@ describe('HTTP API', () => {
     expect(deps.store.insertCast).not.toHaveBeenCalled();
     expect(deps.startCast).not.toHaveBeenCalled();
   });
+
+  it('provides a signed voice session URL for a ready cast', async () => {
+    const readyCast: CastDoc = {
+      _id: 'test-cast-12345678',
+      owner: { id: 1, login: 'user' },
+      githubToken: '',
+      kind: 'codebase',
+      repo: { owner: 'acme', name: 'widget', fullName: 'acme/widget', url: 'https://github.com/acme/widget' },
+      request: { commitLimit: 10, audio: true },
+      status: 'ready',
+      stage: 'Ready',
+      workflowId: 'wf-1',
+      report: {
+        title: 'Acme Widget',
+        tldr: 'Widget tool',
+        purpose: 'Build widgets',
+        architecture: 'Modular',
+        techStack: ['TypeScript'],
+        components: [],
+        dataFlow: 'Direct',
+        entryPoints: [],
+        risks: [],
+        readingOrder: [],
+        openQuestions: [],
+      },
+      warnings: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const { deps, casts } = makeDeps({
+      getVoiceSession: vi.fn(async () => ({ signedUrl: 'wss://api.elevenlabs.io/v1/convai/test', agentId: 'agent-123' })),
+    });
+    casts.set(readyCast._id, readyCast);
+    const app = createApp(deps);
+
+    const res = await app.request(`/api/casts/${readyCast._id}/voice/session`, { method: 'POST' });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual({
+      session: { signedUrl: 'wss://api.elevenlabs.io/v1/convai/test', agentId: 'agent-123' },
+    });
+    expect(deps.getVoiceSession).toHaveBeenCalledWith(readyCast);
+  });
+
+  it('returns 503 when ElevenLabs voice agent is not configured', async () => {
+    const readyCast: CastDoc = {
+      _id: 'test-cast-12345678',
+      owner: { id: 1, login: 'user' },
+      githubToken: '',
+      kind: 'codebase',
+      repo: { owner: 'acme', name: 'widget', fullName: 'acme/widget', url: 'https://github.com/acme/widget' },
+      request: { commitLimit: 10, audio: true },
+      status: 'ready',
+      stage: 'Ready',
+      workflowId: 'wf-1',
+      warnings: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const { deps, casts } = makeDeps({ getVoiceSession: undefined });
+    casts.set(readyCast._id, readyCast);
+    const app = createApp(deps);
+
+    const res = await app.request(`/api/casts/${readyCast._id}/voice/session`, { method: 'POST' });
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.error).toContain('ELEVENLABS_API_KEY');
+  });
+
+  it('executes the Gemma Code Analyser tool for grounded queries', async () => {
+    const readyCast: CastDoc = {
+      _id: 'test-cast-12345678',
+      owner: { id: 1, login: 'user' },
+      githubToken: '',
+      kind: 'codebase',
+      repo: { owner: 'acme', name: 'widget', fullName: 'acme/widget', url: 'https://github.com/acme/widget' },
+      request: { commitLimit: 10, audio: true },
+      status: 'ready',
+      stage: 'Ready',
+      workflowId: 'wf-1',
+      warnings: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const { deps, casts } = makeDeps();
+    casts.set(readyCast._id, readyCast);
+    const app = createApp(deps);
+
+    const res = await app.request(`/api/casts/${readyCast._id}/tool/gemma`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: 'How is authentication handled?' }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual({
+      tool: 'gemma_code_analyser',
+      question: 'How is authentication handled?',
+      result: 'Because of the retry loop.',
+      citations: ['src/worker.ts'],
+    });
+    expect(deps.askQuestion).toHaveBeenCalledWith(readyCast, 'How is authentication handled?');
+  });
 });

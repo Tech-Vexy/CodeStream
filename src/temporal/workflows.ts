@@ -70,33 +70,60 @@ export async function codestreamWorkflow(input: WorkflowInput): Promise<void> {
     };
     await Promise.all(Array.from({ length: Math.max(1, Math.min(input.concurrency, chunks)) }, lane));
 
+    // Parallel Stage: Index embeddings for Q&A and synthesize the full report concurrently with Gemma
     await bookkeeping.setStage({
       castId,
-      stage: codebase ? 'Indexing the code for questions' : 'Indexing the changes for questions',
+      stage: codebase ? 'Gemma is synthesizing report and indexing codebase in parallel' : 'Gemma is synthesizing report and indexing diffs in parallel',
     });
-    try {
-      await indexing.indexEmbeddings({ castId });
-    } catch (err) {
-      if (isCancellation(err)) throw err;
-      // Retrieval falls back to the chunk notes, so indexing trouble must not fail the cast.
-      await bookkeeping.addWarning({ castId, warning: `Q&A indexing failed: ${failureMessage(err)}` });
-    }
 
-    await bookkeeping.setStage({ castId, stage: 'Writing the report' });
-    await model.synthesizeReport({ castId });
+    await Promise.all([
+      (async () => {
+        try {
+          await indexing.indexEmbeddings({ castId });
+        } catch (err) {
+          if (isCancellation(err)) throw err;
+          // Retrieval falls back to the chunk notes, so indexing trouble must not fail the cast.
+          await bookkeeping.addWarning({ castId, warning: `Q&A indexing failed: ${failureMessage(err)}` });
+        }
+      })(),
+      (async () => {
+        await model.synthesizeReport({ castId });
+      })(),
+    ]);
+
+    // Parallel Stage: Now that Gemma's report is ready, run audio briefing and ElevenLabs Voice Agent sync in parallel
+    const postReportTasks: Promise<void>[] = [];
 
     if (input.audio) {
-      await bookkeeping.setStage({ castId, stage: 'Writing the narration' });
-      await model.writeScript({ castId });
-      await bookkeeping.setStage({ castId, stage: 'Recording audio with ElevenLabs' });
-      try {
-        await voice.recordAudio({ castId });
-      } catch (err) {
-        if (isCancellation(err)) throw err;
-        // The written report is still worth delivering without audio.
-        await bookkeeping.addWarning({ castId, warning: `Audio could not be recorded: ${failureMessage(err)}` });
-      }
+      postReportTasks.push(
+        (async () => {
+          try {
+            await bookkeeping.setStage({ castId, stage: 'Writing the narration script' });
+            await model.writeScript({ castId });
+            await bookkeeping.setStage({ castId, stage: 'Recording audio with ElevenLabs' });
+            await voice.recordAudio({ castId });
+          } catch (err) {
+            if (isCancellation(err)) throw err;
+            // The written report is still worth delivering without audio.
+            await bookkeeping.addWarning({ castId, warning: `Audio could not be recorded: ${failureMessage(err)}` });
+          }
+        })(),
+      );
     }
+
+    postReportTasks.push(
+      (async () => {
+        try {
+          await bookkeeping.setStage({ castId, stage: 'Syncing Gemma analysis to ElevenLabs Voice Agent' });
+          await voice.syncVoiceAgent({ castId });
+        } catch (err) {
+          if (isCancellation(err)) throw err;
+          await bookkeeping.addWarning({ castId, warning: `Voice agent sync: ${failureMessage(err)}` });
+        }
+      })(),
+    );
+
+    await Promise.all(postReportTasks);
 
     await bookkeeping.completeCast({ castId });
   } catch (err) {

@@ -8,6 +8,7 @@ import { Store } from '../db/store.js';
 import { InputError } from '../errors.js';
 import { temporalConnectConfig } from '../temporal/connection.js';
 import type { codestreamWorkflow, qaWorkflow } from '../temporal/workflows.js';
+import { ElevenLabsVoiceAgentManager } from '../audio/elevenlabs.js';
 import { createApp } from './app.js';
 import { GitHubOAuth } from '../github/oauth.js';
 import { GitHubClient } from '../github/client.js';
@@ -35,6 +36,16 @@ const { connectionOptions, namespace } = temporalConnectConfig();
 const connection = Connection.lazy(connectionOptions);
 const temporal = new Client({ connection, namespace });
 
+const voiceAgent = config.ELEVENLABS_API_KEY
+  ? new ElevenLabsVoiceAgentManager({
+      apiKey: config.ELEVENLABS_API_KEY,
+      voiceId: config.ELEVENLABS_VOICE_ID,
+      modelId: config.ELEVENLABS_MODEL_ID,
+      agentTtsModel: config.ELEVENLABS_AGENT_TTS_MODEL,
+      agentLlm: config.ELEVENLABS_AGENT_LLM,
+    })
+  : undefined;
+
 if (!config.CODESTREAM_API_TOKEN && config.NODE_ENV === 'production') {
   console.warn('CODESTREAM_API_TOKEN is not set: anyone who can reach this server can start casts and spend your API credits.');
 }
@@ -42,6 +53,7 @@ if (!config.CODESTREAM_API_TOKEN && config.NODE_ENV === 'production') {
 const app = createApp({
   store,
   concurrency: config.LLM_CONCURRENCY,
+  ...(voiceAgent ? { getVoiceSession: (cast) => voiceAgent.createSession(cast) } : {}),
   ...(config.CODESTREAM_API_TOKEN ? { apiToken: config.CODESTREAM_API_TOKEN } : {}),
   ...(config.GITHUB_CLIENT_ID && config.GITHUB_CLIENT_SECRET && config.SESSION_SECRET
     ? { githubOAuth: new GitHubOAuth({ clientId: config.GITHUB_CLIENT_ID, clientSecret: config.GITHUB_CLIENT_SECRET, callbackUrl: config.GITHUB_CALLBACK_URL }), sessionSecret: config.SESSION_SECRET, secureCookies: config.NODE_ENV === 'production' && config.GITHUB_CALLBACK_URL.startsWith('https://') }

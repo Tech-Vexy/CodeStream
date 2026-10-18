@@ -1180,3 +1180,226 @@ dialog button[value='cancel'] {
     gap: 3.5rem;
   }
 }
+
+/* ---------------------------------------------------------------- Voice Agent Panel */
+
+.voice-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  background: linear-gradient(145deg, rgba(28, 36, 48, 0.7), rgba(21, 27, 36, 0.95));
+  border: 1px solid rgba(124, 156, 255, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.voice-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.voice-title-group h4 {
+  margin: 0.35rem 0 0.2rem;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.voice-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.voice-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(180, 140, 255, 0.15);
+  border: 1px solid rgba(180, 140, 255, 0.35);
+  color: var(--accent-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.voice-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.voice-btn {
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.92rem;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.voice-btn.start {
+  color: #0b0f17;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 2px 10px rgba(124, 156, 255, 0.3);
+}
+
+.voice-btn.start:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(124, 156, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.voice-btn.end {
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  color: var(--high);
+}
+
+.voice-btn.end:hover {
+  background: rgba(255, 107, 107, 0.25);
+}
+
+.voice-btn.mute {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.voice-visualizer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 0.5rem;
+}
+
+.wave {
+  width: 4px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: height 0.15s ease;
+}
+
+.voice-visualizer.speaking .wave {
+  background: var(--accent-2);
+  animation: pulseWave 0.7s infinite alternate ease-in-out;
+}
+
+.voice-visualizer.speaking .wave-1 { animation-delay: 0.1s; }
+.voice-visualizer.speaking .wave-2 { animation-delay: 0.25s; }
+.voice-visualizer.speaking .wave-3 { animation-delay: 0.4s; }
+.voice-visualizer.speaking .wave-4 { animation-delay: 0.2s; }
+.voice-visualizer.speaking .wave-5 { animation-delay: 0.35s; }
+
+@keyframes pulseWave {
+  0% { height: 6px; }
+  100% { height: 24px; }
+}
+
+.tool-call-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  background: rgba(124, 156, 255, 0.1);
+  border: 1px solid rgba(124, 156, 255, 0.35);
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.tool-icon {
+  font-size: 1.1rem;
+}
+
+.voice-transcript-details {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.voice-transcript-details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.voice-transcript-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.transcript-entry {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+.transcript-entry.tool {
+  background: rgba(124, 156, 255, 0.05);
+  border-color: rgba(124, 156, 255, 0.25);
+}
+
+.transcript-entry.agent {
+  border-left: 3px solid var(--accent-2);
+}
+
+.transcript-entry.user {
+  border-left: 3px solid var(--low);
+}
+
+.transcript-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.transcript-meta time {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.speaker-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+}
+
+.speaker-pill.agent-pill {
+  background: rgba(180, 140, 255, 0.18);
+  color: var(--accent-2);
+}
+
+.speaker-pill.user-pill {
+  background: rgba(88, 196, 168, 0.18);
+  color: var(--low);
+}
+
+.speaker-pill.tool-pill {
+  background: rgba(124, 156, 255, 0.18);
+  color: var(--accent);
+}

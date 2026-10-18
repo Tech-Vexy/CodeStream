@@ -18,6 +18,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@elevenlabs/client": "^1.28.0",
     "@elevenlabs/elevenlabs-js": "^2.73.0",
     "@hono/node-server": "^2.1.5",
     "@mastra/core": "^1.78.0",
