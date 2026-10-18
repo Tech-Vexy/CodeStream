@@ -90,14 +90,19 @@ export function createApp(deps: AppDeps) {
   app.get('/auth/github', (c) => {
     if (!deps.githubOAuth || !deps.sessionSecret) return c.json({ error: 'GitHub OAuth is not configured.' }, 503);
     const state = randomBytes(24).toString('base64url');
-    return new Response(null, { status: 302, headers: { Location: deps.githubOAuth.authorizationUrl(state), 'Set-Cookie': cookie('codestream_oauth_state', signState(state, deps.sessionSecret), 600) } });
+    const signed = signState(state, deps.sessionSecret);
+    return new Response(null, { status: 302, headers: { Location: deps.githubOAuth.authorizationUrl(signed), 'Set-Cookie': cookie('codestream_oauth_state', signed, 600) } });
   });
 
   app.get('/auth/github/callback', async (c) => {
     if (!deps.githubOAuth || !deps.sessionSecret) return c.json({ error: 'GitHub OAuth is not configured.' }, 503);
-    const state = verifyState(c.req.query('state'), deps.sessionSecret);
-    const savedState = verifyState(getCookie(c, 'codestream_oauth_state'), deps.sessionSecret);
-    if (!state || state !== savedState) return c.json({ error: 'Invalid OAuth state.' }, 400);
+    const queryState = c.req.query('state');
+    const cookieState = getCookie(c, 'codestream_oauth_state');
+    if (!queryState || !cookieState) return c.json({ error: 'Invalid OAuth state.' }, 400);
+
+    const state = verifyState(queryState, deps.sessionSecret) ?? queryState;
+    const savedState = verifyState(cookieState, deps.sessionSecret);
+    if (!savedState || !sameSecret(state, savedState)) return c.json({ error: 'Invalid OAuth state.' }, 400);
     const code = c.req.query('code');
     if (!code) return c.json({ error: 'GitHub did not return an authorization code.' }, 400);
     const exchanged = await deps.githubOAuth.exchange(code);

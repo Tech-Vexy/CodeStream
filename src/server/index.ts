@@ -44,7 +44,7 @@ const app = createApp({
   concurrency: config.LLM_CONCURRENCY,
   ...(config.CODESTREAM_API_TOKEN ? { apiToken: config.CODESTREAM_API_TOKEN } : {}),
   ...(config.GITHUB_CLIENT_ID && config.GITHUB_CLIENT_SECRET && config.SESSION_SECRET
-    ? { githubOAuth: new GitHubOAuth({ clientId: config.GITHUB_CLIENT_ID, clientSecret: config.GITHUB_CLIENT_SECRET, callbackUrl: config.GITHUB_CALLBACK_URL }), sessionSecret: config.SESSION_SECRET, secureCookies: config.NODE_ENV === 'production' }
+    ? { githubOAuth: new GitHubOAuth({ clientId: config.GITHUB_CLIENT_ID, clientSecret: config.GITHUB_CLIENT_SECRET, callbackUrl: config.GITHUB_CALLBACK_URL }), sessionSecret: config.SESSION_SECRET, secureCookies: config.NODE_ENV === 'production' && config.GITHUB_CALLBACK_URL.startsWith('https://') }
     : {}),
   ...(config.GITHUB_TOKEN ? { githubToken: config.GITHUB_TOKEN } : {}),
   listRepos: async (token?: string) => {

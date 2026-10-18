@@ -41,6 +41,50 @@ describe('HTTP API', () => {
     expect(response.headers.get('set-cookie')).toContain('codestream_oauth_state=');
   });
 
+  it('completes GitHub OAuth callback when state is valid', async () => {
+    const oauth = {
+      authorizationUrl: vi.fn(),
+      exchange: vi.fn(async () => ({
+        accessToken: 'mock-gh-token',
+        user: { id: 123, login: 'testuser', name: 'Test User' },
+      })),
+    } as unknown as GitHubOAuth;
+    const { deps } = makeDeps({ githubOAuth: oauth, sessionSecret: 'a'.repeat(32) });
+    const app = createApp(deps);
+
+    const initRes = await app.request('/auth/github');
+    expect(initRes.status).toBe(302);
+    const setCookie = initRes.headers.get('set-cookie')!;
+    const stateMatch = setCookie.match(/codestream_oauth_state=([^;]+)/);
+    expect(stateMatch).toBeTruthy();
+    const cookieState = decodeURIComponent(stateMatch![1]);
+
+    const callbackRes = await app.request(`/auth/github/callback?code=mock_code&state=${cookieState}`, {
+      headers: { Cookie: `codestream_oauth_state=${cookieState}` },
+    });
+
+    expect(callbackRes.status).toBe(302);
+    expect(callbackRes.headers.get('location')).toBe('/');
+    expect(callbackRes.headers.get('set-cookie')).toContain('codestream_session=');
+    expect(oauth.exchange).toHaveBeenCalledWith('mock_code');
+  });
+
+  it('rejects GitHub OAuth callback with invalid state', async () => {
+    const oauth = {
+      authorizationUrl: vi.fn(),
+      exchange: vi.fn(),
+    } as unknown as GitHubOAuth;
+    const { deps } = makeDeps({ githubOAuth: oauth, sessionSecret: 'a'.repeat(32) });
+    const app = createApp(deps);
+
+    const res = await app.request('/auth/github/callback?code=mock_code&state=badstate', {
+      headers: { Cookie: 'codestream_oauth_state=forged' },
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid OAuth state.' });
+    expect(oauth.exchange).not.toHaveBeenCalled();
+  });
+
   it('serves health checks without API authentication', async () => {
     const { deps } = makeDeps({ apiToken: 'secret' });
     const response = await createApp(deps).request('/healthz');
