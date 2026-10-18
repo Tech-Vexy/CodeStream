@@ -33,6 +33,8 @@ services:
         sync: false
       - key: SESSION_SECRET
         sync: false
+      - key: GITHUB_TOKEN
+        sync: false
       - key: LLM_CONCURRENCY
         value: "2"
       - key: SENTRY_DSN
@@ -76,9 +78,9 @@ services:
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: ELEVENLABS_VOICE_ID
-        value: JBFqnCBsd6RMkjVDRZzb
+        value: BZgkqPqms7Kj9ulSkVzn
       - key: ELEVENLABS_MODEL_ID
-        value: eleven_multilingual_v2
+        value: eleven_v4
       - key: LLM_CHUNK_CHARS
         value: "24000"
       - key: LLM_CONCURRENCY
