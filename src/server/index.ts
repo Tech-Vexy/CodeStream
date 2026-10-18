@@ -5,23 +5,24 @@ import { Client, Connection } from '@temporalio/client';
 import { ApplicationFailure } from '@temporalio/common';
 import { loadConfig } from '../config.js';
 import { Store } from '../db/store.js';
-import { InputError } from '../errors.js';
+import { ConfigError, InputError } from '../errors.js';
 import { temporalConnectConfig } from '../temporal/connection.js';
-import type { codestreamWorkflow, qaWorkflow } from '../temporal/workflows.js';
+import type { codestreamWorkflow, qaWorkflow, voiceSessionWorkflow } from '../temporal/workflows.js';
 import { ElevenLabsVoiceAgentManager } from '../audio/elevenlabs.js';
 import { createApp } from './app.js';
 import { GitHubOAuth } from '../github/oauth.js';
 import { GitHubClient } from '../github/client.js';
 
 /**
- * Re-surface a failed Q&A workflow's non-retryable InputError (e.g. "no indexed knowledge yet") as
- * the API's own 400-carrying type; everything else keeps bubbling as a 500.
+ * Re-surface a failed workflow's non-retryable InputError or ConfigError as
+ * the API's own 400/503-carrying types; everything else keeps bubbling as a 500.
  */
 function unwrapInputError(err: unknown): unknown {
   let cause: unknown = err instanceof Error ? err.cause : undefined;
   while (cause) {
-    if (cause instanceof ApplicationFailure && cause.type === 'InputError') {
-      return new InputError(cause.message || 'The question could not be answered.');
+    if (cause instanceof ApplicationFailure) {
+      if (cause.type === 'InputError') return new InputError(cause.message || 'The request could not be completed.');
+      if (cause.type === 'ConfigError') return new ConfigError(cause.message || 'Service is not configured.');
     }
     cause = cause instanceof Error ? cause.cause : undefined;
   }
@@ -53,7 +54,21 @@ if (!config.CODESTREAM_API_TOKEN && config.NODE_ENV === 'production') {
 const app = createApp({
   store,
   concurrency: config.LLM_CONCURRENCY,
-  ...(voiceAgent ? { getVoiceSession: (cast) => voiceAgent.createSession(cast) } : {}),
+  getVoiceSession: async (cast) => {
+    if (voiceAgent) {
+      return voiceAgent.createSession(cast);
+    }
+    const handle = await temporal.workflow.start<typeof voiceSessionWorkflow>('voiceSessionWorkflow', {
+      taskQueue: config.TEMPORAL_TASK_QUEUE,
+      workflowId: `voice-${cast._id}-${randomBytes(6).toString('hex')}`,
+      args: [{ castId: cast._id }],
+    });
+    try {
+      return await handle.result();
+    } catch (err) {
+      throw unwrapInputError(err);
+    }
+  },
   ...(config.CODESTREAM_API_TOKEN ? { apiToken: config.CODESTREAM_API_TOKEN } : {}),
   ...(config.GITHUB_CLIENT_ID && config.GITHUB_CLIENT_SECRET && config.SESSION_SECRET
     ? { githubOAuth: new GitHubOAuth({ clientId: config.GITHUB_CLIENT_ID, clientSecret: config.GITHUB_CLIENT_SECRET, callbackUrl: config.GITHUB_CALLBACK_URL }), sessionSecret: config.SESSION_SECRET, secureCookies: config.NODE_ENV === 'production' && config.GITHUB_CALLBACK_URL.startsWith('https://') }

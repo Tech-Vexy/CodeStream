@@ -140,3 +140,10 @@ export async function codestreamWorkflow(input: WorkflowInput): Promise<void> {
 export async function qaWorkflow(input: QaInput): Promise<QaAnswer> {
   return qa.answerQuestion(input);
 }
+
+/**
+ * Create a voice conversation session for a finished cast on the worker where the ElevenLabs key is configured.
+ */
+export async function voiceSessionWorkflow(input: { castId: string }): Promise<{ signedUrl: string; agentId: string }> {
+  return voice.createVoiceSession(input);
+}

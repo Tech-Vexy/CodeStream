@@ -347,6 +347,17 @@ export function createActivities(deps: ActivityDeps) {
       log.info('Synced Gemma analysis to ElevenLabs voice agent', { castId, agentId });
     },
 
+    async createVoiceSession({ castId }: { castId: string }): Promise<{ signedUrl: string; agentId: string }> {
+      if (!deps.voiceAgent) throw new ConfigError('ELEVENLABS_API_KEY is not configured on the worker.');
+      const cast = await requireCast(castId);
+      if (!cast.report) throw new Error(`Cast ${castId} has no report for a voice session.`);
+      const session = await deps.voiceAgent.createSession(cast);
+      if (!cast.elevenAgent?.agentId) {
+        await store.updateCast(castId, { elevenAgent: { agentId: session.agentId, createdAt: new Date() } });
+      }
+      return session;
+    },
+
     /** One grounded answer about a finished cast; the service persists the exchange as history. */
     async answerQuestion({ castId, question }: { castId: string; question: string }): Promise<QaAnswer> {
       if (!qa) throw new ConfigError('The Q&A service is not configured on this worker.');
