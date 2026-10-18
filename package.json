@@ -1,0 +1,43 @@
+{
+  "name": "codestream",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Know what your coding agent built: codebase tours, commit-change reviews and narrated audio streams.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server/index.ts",
+    "dev:worker": "tsx watch src/temporal/worker.ts",
+    "build": "tsc -p tsconfig.worker.json",
+    "start": "npm run start:web",
+    "start:web": "node --import ./dist/instrument.js dist/server/index.js",
+    "start:worker": "node --import ./dist/instrument.js dist/temporal/worker.js",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.worker.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.73.0",
+    "@hono/node-server": "^2.1.5",
+    "@mastra/core": "^1.78.0",
+    "@mastra/observability": "^1.20.1",
+    "@sentry/node": "^11.8.0",
+    "@temporalio/activity": "^1.24.0",
+    "@temporalio/client": "^1.24.0",
+    "@temporalio/common": "^1.24.0",
+    "@temporalio/envconfig": "^1.24.0",
+    "@temporalio/worker": "^1.24.0",
+    "@temporalio/workflow": "^1.24.0",
+    "hono": "^4.13.13",
+    "mongodb": "^7.7.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@temporalio/testing": "^1.24.0",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
