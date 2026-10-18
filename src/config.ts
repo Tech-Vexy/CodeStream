@@ -41,14 +41,6 @@ const envSchema = z.object({
   ELEVENLABS_VOICE_ID: z.string().default('JBFqnCBsd6RMkjVDRZzb'),
   ELEVENLABS_MODEL_ID: z.string().default('eleven_multilingual_v2'),
 
-  // ElevenAgents (Conversational AI) voice sessions. The TTS model must be a conversational model.
-  ELEVENLABS_AGENT_TTS_MODEL: z.string().default('eleven_turbo_v2_5'),
-  // The voice agent's LLM runs inside ElevenLabs, which hosts Gemini/GPT/Claude but no Gemma, so the
-  // spoken tier uses Gemini 3.8 Flash. Every code-analysis call stays on Gemma via CODESTREAM_MODEL.
-  // To make the voice tier Gemma too, run a custom LLM endpoint that proxies the Mastra agent:
-  // https://elevenlabs.io/docs/eleven-agents/customization/llm/custom-llm
-  ELEVENLABS_AGENT_LLM: z.string().default('gemini-3.8-flash'),
-
   // MongoDB Voyage AI embedding models (https://docs.voyageai.com). Used for codebase Q&A retrieval.
   VOYAGE_API_KEY: optionalString,
   VOYAGE_EMBEDDING_MODEL: z.string().default('voyage-code-3'),

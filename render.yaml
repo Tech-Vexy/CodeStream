@@ -43,10 +43,6 @@ services:
         sync: false
       - key: ELEVENLABS_MODEL_ID
         sync: false
-      - key: ELEVENLABS_AGENT_TTS_MODEL
-        sync: false
-      - key: ELEVENLABS_AGENT_LLM
-        sync: false
       - key: SENTRY_DSN
         sync: false
       - key: SENTRY_ENABLED
@@ -88,13 +84,9 @@ services:
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: ELEVENLABS_VOICE_ID
-        value: BZgkqPqms7Kj9ulSkVzn
+        value: JBFqnCBsd6RMkjVDRZzb
       - key: ELEVENLABS_MODEL_ID
-        value: eleven_v4
-      - key: ELEVENLABS_AGENT_TTS_MODEL
-        value: eleven_turbo_v2_5
-      - key: ELEVENLABS_AGENT_LLM
-        value: gemini-3.8-flash
+        value: eleven_multilingual_v2
       - key: LLM_CHUNK_CHARS
         value: "24000"
       - key: LLM_CONCURRENCY
