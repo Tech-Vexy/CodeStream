@@ -2,7 +2,6 @@ const TOKEN_KEY = 'codestream.token';
 const POLL_MS_MIN = 3000;
 const POLL_MS_MAX = 30000;
 const state = { currentId: null, pollTimer: null, pollMs: POLL_MS_MIN };
-const authState = { user: null, authEnabled: false, checked: false };
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -59,76 +58,6 @@ function timeAgo(iso) {
   return '';
 }
 
-// ---------------------------------------------------------------- Auth & Views
-
-function showLanding() {
-  const landing = $('#landing-view');
-  const app = $('#app-view');
-  if (landing) landing.hidden = false;
-  if (app) app.hidden = true;
-  const navDash = $('#nav-dashboard-link');
-  if (navDash) navDash.hidden = !authState.user;
-}
-
-function showApp() {
-  const landing = $('#landing-view');
-  const app = $('#app-view');
-  if (landing) landing.hidden = true;
-  if (app) app.hidden = false;
-  const navDash = $('#nav-dashboard-link');
-  if (navDash) navDash.hidden = false;
-}
-
-function renderAccount() {
-  const accountEl = $('#account');
-  if (!accountEl) return;
-  if (authState.user) {
-    const avatar = authState.user.avatarUrl
-      ? el('img', { src: authState.user.avatarUrl, class: 'user-avatar', alt: authState.user.login })
-      : el('span', { class: 'user-avatar', text: authState.user.login.slice(0, 1).toUpperCase() });
-    const signoutBtn = el('button', {
-      class: 'btn-signout',
-      text: 'Sign out',
-      onclick: async () => {
-        await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
-        authState.user = null;
-        renderAccount();
-        showLanding();
-        location.hash = '#/';
-      },
-    });
-    accountEl.replaceChildren(
-      el('div', { class: 'user-badge' }, avatar, el('span', { class: 'user-login', text: authState.user.login }), signoutBtn)
-    );
-  } else if (authState.authEnabled) {
-    accountEl.replaceChildren(
-      el(
-        'a',
-        { href: '/auth/github', class: 'btn btn-github btn-signout' },
-        el('span', { text: 'Sign in with GitHub' })
-      )
-    );
-  } else {
-    accountEl.replaceChildren();
-  }
-}
-
-async function checkAuth() {
-  try {
-    const res = await fetch('/auth/me');
-    if (res.ok) {
-      const data = await res.json();
-      authState.user = data.user;
-      authState.authEnabled = Boolean(data.authEnabled);
-    }
-  } catch {
-    // network error
-  } finally {
-    authState.checked = true;
-  }
-  renderAccount();
-}
-
 function askForToken() {
   const dialog = $('#token-dialog');
   const input = dialog.querySelector('input');
@@ -158,11 +87,8 @@ async function api(path, options = {}) {
   if (res.status === 401) {
     const message = (await res.clone().json().catch(() => ({}))).error;
     if (String(message).includes('Sign in with GitHub')) {
-      authState.user = null;
-      authState.authEnabled = true;
-      renderAccount();
-      showLanding();
-      throw new Error('Sign in with GitHub to use CodeStream.');
+      location.href = '/';
+      throw new Error('Redirecting to home page.');
     }
     if (await askForToken()) return api(path, options);
     throw new Error('This deployment requires an API token.');
@@ -184,11 +110,46 @@ function statusLabel(cast) {
   return 'Working';
 }
 
+// ---------------------------------------------------------------- Auth
+
+async function initAuth() {
+  const accountEl = $('#account');
+  try {
+    const res = await fetch('/auth/me');
+    if (!res.ok) return;
+    const { user, authEnabled } = await res.json();
+
+    if (authEnabled && !user) {
+      // Unauthenticated visitor trying to view dashboard directly -> redirect to landing
+      location.href = '/';
+      return;
+    }
+
+    if (user && accountEl) {
+      const avatar = user.avatarUrl
+        ? el('img', { src: user.avatarUrl, class: 'user-avatar', alt: user.login })
+        : el('span', { class: 'user-avatar', text: user.login.slice(0, 1).toUpperCase() });
+
+      accountEl.replaceChildren(
+        el(
+          'div',
+          { class: 'user-badge' },
+          avatar,
+          el('span', { class: 'user-login', text: user.login }),
+          el('a', { href: '/auth/logout', class: 'btn-signout', text: 'Sign out' }),
+        ),
+      );
+    }
+  } catch {
+    // network fallback
+  }
+}
+
 // ---------------------------------------------------------------- Repositories
 
 let reposLoaded = false;
 async function loadRepos() {
-  if (reposLoaded || !authState.user) return;
+  if (reposLoaded) return;
   try {
     const data = await api('/api/repos');
     if (data?.repos) {
@@ -196,14 +157,14 @@ async function loadRepos() {
       if (datalist) {
         datalist.replaceChildren(
           ...data.repos.map((r) =>
-            el('option', { value: r.fullName, text: r.description ? `${r.fullName} — ${r.description}` : r.fullName })
-          )
+            el('option', { value: r.fullName, text: r.description ? `${r.fullName} — ${r.description}` : r.fullName }),
+          ),
         );
         reposLoaded = true;
       }
     }
   } catch {
-    // Repository browsing may be unconfigured or user has no repos
+    // Repository browsing may be unconfigured
   }
 }
 
@@ -343,7 +304,7 @@ function qaPanel(cast) {
   const list = el('ul', { class: 'qa-list' }, [el('li', { class: 'empty', text: 'Loading questions…' })]);
   const input = el('input', {
     name: 'question',
-    placeholder: cast.status === 'ready' ? 'Ask about this codebase…' : 'Questions unlock once the cast is ready',
+    placeholder: 'Ask about this codebase…',
     disabled: cast.status !== 'ready',
   });
   const button = el('button', { type: 'submit', text: 'Ask', disabled: cast.status !== 'ready' });
@@ -479,44 +440,8 @@ function setupForm() {
   });
 }
 
-function setupMockupPlay() {
-  const playBtn = $('.audio-play-btn');
-  if (!playBtn) return;
-  playBtn.addEventListener('click', () => {
-    const isPlaying = playBtn.textContent === '⏸';
-    playBtn.textContent = isPlaying ? '▶' : '⏸';
-    const wave = $('.audio-wave');
-    if (wave) {
-      wave.style.filter = isPlaying ? 'none' : 'brightness(1.3) drop-shadow(0 0 6px var(--accent))';
-    }
-  });
-}
-
-async function route() {
-  if (!authState.checked) {
-    await checkAuth();
-  }
-
-  const hash = location.hash;
-
-  // Unauthenticated visitors seeing landing page
-  if (authState.authEnabled && !authState.user) {
-    showLanding();
-    return;
-  }
-
-  // Explicit landing routes
-  if (hash === '#/welcome' || hash === '#features' || hash === '#how-it-works' || hash === '#preview') {
-    showLanding();
-    return;
-  }
-
-  // User is authenticated or OAuth is open: show main dashboard
-  showApp();
-  loadList();
-  loadRepos();
-
-  const match = /^#\/casts\/([^/]+)$/.exec(hash);
+function route() {
+  const match = /^#\/casts\/([^/]+)$/.exec(location.hash);
   if (match) {
     showCast(decodeURIComponent(match[1]));
   }
@@ -524,12 +449,11 @@ async function route() {
 
 // Initialization
 setupForm();
-setupMockupPlay();
-window.addEventListener('hashchange', () => {
-  route();
-});
+window.addEventListener('hashchange', () => route());
 
 // Boot
-checkAuth().then(() => {
+initAuth().then(() => {
+  loadList();
+  loadRepos();
   route();
 });

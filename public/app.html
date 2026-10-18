@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CodeStream · Dashboard</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <!-- TOP APP HEADER -->
+    <header class="top">
+      <div class="brand-group">
+        <a class="brand" href="/app">
+          <span class="logo" aria-hidden="true"></span>
+          CodeStream
+        </a>
+        <nav class="nav-links">
+          <a href="/" class="nav-link">&larr; Home</a>
+          <a href="/app" class="nav-link app-nav-link">Dashboard</a>
+        </nav>
+      </div>
+      <div id="account" class="account"></div>
+    </header>
+
+    <!-- DASHBOARD APPLICATION LAYOUT -->
+    <main class="layout">
+      <div class="sidebar">
+        <section class="panel">
+          <h2>New cast</h2>
+          <form id="cast-form" autocomplete="off">
+            <label>
+              GitHub repository
+              <input name="repoUrl" list="repo-options" required placeholder="owner/repo or https://github.com/owner/repo" />
+              <datalist id="repo-options"></datalist>
+            </label>
+
+            <fieldset class="kind">
+              <legend>What should CodeStream explain?</legend>
+              <label><input type="radio" name="kind" value="codebase" checked /> Codebase tour</label>
+              <label><input type="radio" name="kind" value="changes" /> Recent changes</label>
+            </fieldset>
+
+            <label>
+              Branch, tag or commit
+              <input name="ref" placeholder="default branch" />
+            </label>
+
+            <div class="changes-only" hidden>
+              <label>
+                Commits to review
+                <input name="commitLimit" type="number" min="1" max="50" value="10" />
+              </label>
+              <label>
+                Or everything since
+                <input name="base" placeholder="commit, tag or branch (optional)" />
+              </label>
+            </div>
+
+            <label class="check"><input type="checkbox" name="audio" checked /> Narrate it with ElevenLabs</label>
+
+            <button type="submit">Generate cast</button>
+            <p class="form-error" id="form-error" hidden></p>
+          </form>
+        </section>
+
+        <section class="panel">
+          <h2>Recent casts</h2>
+          <ul id="cast-list" class="cast-list"></ul>
+        </section>
+      </div>
+
+      <section class="panel detail" id="detail">
+        <div class="intro">
+          <h2>Stop trusting blindly.</h2>
+          <p>
+            Point CodeStream at a GitHub repo and Gemma reads it for you: a tour of the whole codebase, or a review of
+            the commits your agent just pushed, with the risky parts called out. Then stream it as a short audio briefing.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- TOKEN DIALOG (Fallback when OAuth is not configured) -->
+    <dialog id="token-dialog">
+      <form method="dialog">
+        <h2>API token required</h2>
+        <p>This CodeStream deployment is protected. Paste the value of <code>CODESTREAM_API_TOKEN</code>.</p>
+        <input name="token" type="password" required autocomplete="current-password" />
+        <menu>
+          <button value="cancel" formnovalidate>Cancel</button>
+          <button value="save">Save</button>
+        </menu>
+      </form>
+    </dialog>
+  </body>
+</html>

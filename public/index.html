@@ -5,28 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CodeStream · AI Codebase Tours & Reviews</title>
     <link rel="stylesheet" href="/styles.css" />
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="/landing.js"></script>
   </head>
   <body>
     <!-- TOP NAVIGATION -->
     <header class="top">
       <div class="brand-group">
-        <a class="brand" href="#/">
+        <a class="brand" href="/">
           <span class="logo" aria-hidden="true"></span>
           CodeStream
         </a>
-        <nav class="nav-links" id="nav-links">
+        <nav class="nav-links">
           <a href="#features" class="nav-link">Features</a>
           <a href="#how-it-works" class="nav-link">How It Works</a>
           <a href="#preview" class="nav-link">Preview</a>
-          <a href="#/app" class="nav-link app-nav-link" id="nav-dashboard-link" hidden>Dashboard</a>
         </nav>
       </div>
       <div id="account" class="account"></div>
     </header>
 
-    <!-- LANDING VIEW (Shown to unauthenticated visitors or via #/welcome) -->
-    <div id="landing-view" class="landing-view">
+    <!-- DEDICATED LANDING PAGE -->
+    <div class="landing-view">
       <!-- HERO SECTION -->
       <section class="hero">
         <div class="hero-badge">
@@ -42,7 +41,7 @@
           pinpoints concrete risks, generates narrated audio briefings, and answers your questions with source-cited precision.
         </p>
         <div class="hero-actions">
-          <a href="/auth/github" class="btn btn-primary btn-large btn-github" id="hero-get-started">
+          <a href="/auth/github" class="btn btn-primary btn-large btn-github" id="hero-cta">
             <svg class="github-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
             </svg>
@@ -233,7 +232,7 @@
       <section class="cta-banner">
         <h2>Stop guessing what your agent changed.</h2>
         <p>Start listening to your codebase and review pull requests with complete confidence.</p>
-        <a href="/auth/github" class="btn btn-primary btn-large btn-github">
+        <a href="/auth/github" class="btn btn-primary btn-large btn-github" id="banner-cta">
           <svg class="github-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
           </svg>
@@ -254,76 +253,5 @@
         </div>
       </footer>
     </div>
-
-    <!-- MAIN APP DASHBOARD (Shown when logged in or in application mode) -->
-    <main id="app-view" class="layout app-view" hidden>
-      <div class="sidebar">
-        <section class="panel">
-          <h2>New cast</h2>
-          <form id="cast-form" autocomplete="off">
-            <label>
-              GitHub repository
-              <input name="repoUrl" list="repo-options" required placeholder="owner/repo or https://github.com/owner/repo" />
-              <datalist id="repo-options"></datalist>
-            </label>
-
-            <fieldset class="kind">
-              <legend>What should CodeStream explain?</legend>
-              <label><input type="radio" name="kind" value="codebase" checked /> Codebase tour</label>
-              <label><input type="radio" name="kind" value="changes" /> Recent changes</label>
-            </fieldset>
-
-            <label>
-              Branch, tag or commit
-              <input name="ref" placeholder="default branch" />
-            </label>
-
-            <div class="changes-only" hidden>
-              <label>
-                Commits to review
-                <input name="commitLimit" type="number" min="1" max="50" value="10" />
-              </label>
-              <label>
-                Or everything since
-                <input name="base" placeholder="commit, tag or branch (optional)" />
-              </label>
-            </div>
-
-            <label class="check"><input type="checkbox" name="audio" checked /> Narrate it with ElevenLabs</label>
-
-            <button type="submit">Generate cast</button>
-            <p class="form-error" id="form-error" hidden></p>
-          </form>
-        </section>
-
-        <section class="panel">
-          <h2>Recent casts</h2>
-          <ul id="cast-list" class="cast-list"></ul>
-        </section>
-      </div>
-
-      <section class="panel detail" id="detail">
-        <div class="intro">
-          <h2>Stop trusting blindly.</h2>
-          <p>
-            Point CodeStream at a GitHub repo and Gemma reads it for you: a tour of the whole codebase, or a review of
-            the commits your agent just pushed, with the risky parts called out. Then stream it as a short audio briefing.
-          </p>
-        </div>
-      </section>
-    </main>
-
-    <!-- TOKEN DIALOG (Fallback when OAuth is not configured) -->
-    <dialog id="token-dialog">
-      <form method="dialog">
-        <h2>API token required</h2>
-        <p>This CodeStream deployment is protected. Paste the value of <code>CODESTREAM_API_TOKEN</code>.</p>
-        <input name="token" type="password" required autocomplete="current-password" />
-        <menu>
-          <button value="cancel" formnovalidate>Cancel</button>
-          <button value="save">Save</button>
-        </menu>
-      </form>
-    </dialog>
   </body>
 </html>

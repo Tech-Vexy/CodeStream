@@ -1,4 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { serveStatic } from '@hono/node-server/serve-static';
 import * as Sentry from '@sentry/node';
@@ -107,16 +109,34 @@ export function createApp(deps: AppDeps) {
     if (!code) return c.json({ error: 'GitHub did not return an authorization code.' }, 400);
     const exchanged = await deps.githubOAuth.exchange(code);
     const session: GitHubSession = { user: exchanged.user, accessToken: exchanged.accessToken, expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000 };
-    const headers = new Headers({ Location: '/' });
+    const headers = new Headers({ Location: '/app' });
     headers.append('Set-Cookie', cookie('codestream_session', sealSession(session, deps.sessionSecret), 30 * 24 * 60 * 60));
     headers.append('Set-Cookie', cookie('codestream_oauth_state', '', 0));
     return new Response(null, { status: 302, headers });
   });
 
-  app.post('/auth/logout', (c) => new Response(null, { status: 204, headers: { 'Set-Cookie': cookie('codestream_session', '', 0) } }));
+  app.all('/auth/logout', (c) => {
+    const headers = new Headers({ Location: '/' });
+    headers.append('Set-Cookie', cookie('codestream_session', '', 0));
+    return new Response(null, { status: 302, headers });
+  });
+
   app.get('/auth/me', (c) => {
     const session = getSession(c);
     return c.json({ user: session ? session.user : null, authEnabled });
+  });
+
+  app.get('/app', async (c) => {
+    if (authEnabled && !getSession(c)) {
+      return c.redirect('/');
+    }
+    const publicDir = deps.publicDir ?? './public';
+    try {
+      const html = await readFile(join(publicDir, 'app.html'), 'utf8');
+      return c.html(html);
+    } catch {
+      return c.redirect('/');
+    }
   });
 
   app.use('/api/*', async (c, next) => {

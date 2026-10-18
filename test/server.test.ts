@@ -56,15 +56,15 @@ describe('HTTP API', () => {
     expect(initRes.status).toBe(302);
     const setCookie = initRes.headers.get('set-cookie')!;
     const stateMatch = setCookie.match(/codestream_oauth_state=([^;]+)/);
-    expect(stateMatch).toBeTruthy();
-    const cookieState = decodeURIComponent(stateMatch![1]);
+    expect(stateMatch?.[1]).toBeTruthy();
+    const cookieState = decodeURIComponent(stateMatch![1] as string);
 
     const callbackRes = await app.request(`/auth/github/callback?code=mock_code&state=${cookieState}`, {
       headers: { Cookie: `codestream_oauth_state=${cookieState}` },
     });
 
     expect(callbackRes.status).toBe(302);
-    expect(callbackRes.headers.get('location')).toBe('/');
+    expect(callbackRes.headers.get('location')).toBe('/app');
     expect(callbackRes.headers.get('set-cookie')).toContain('codestream_session=');
     expect(oauth.exchange).toHaveBeenCalledWith('mock_code');
   });
@@ -83,6 +83,16 @@ describe('HTTP API', () => {
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'Invalid OAuth state.' });
     expect(oauth.exchange).not.toHaveBeenCalled();
+  });
+
+  it('redirects unauthenticated users from /app to / when OAuth is enabled', async () => {
+    const oauth = {} as unknown as GitHubOAuth;
+    const { deps } = makeDeps({ githubOAuth: oauth, sessionSecret: 'a'.repeat(32) });
+    const app = createApp(deps);
+
+    const res = await app.request('/app');
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location')).toBe('/');
   });
 
   it('serves health checks without API authentication', async () => {
