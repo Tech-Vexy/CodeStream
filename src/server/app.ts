@@ -29,7 +29,13 @@ export interface AppDeps {
   githubToken?: string;
   listRepos?: (token?: string) => Promise<RepoSummary[]>;
   secureCookies?: boolean;
+  /** Directory containing the built web bundle (web-dist) or legacy static pages (public). */
   publicDir?: string;
+}
+
+/** Resolve the web-asset root: the React SPA bundle built into web-dist. */
+function webRoot(explicit?: string): string {
+  return explicit ?? './web-dist';
 }
 
 const REF = /^(?!.*\.\.)[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$/;
@@ -71,6 +77,7 @@ const questionSchema = z.object({
 
 export function createApp(deps: AppDeps) {
   const app = new Hono();
+  const root = webRoot(deps.publicDir);
   const cookie = (name: string, value: string, maxAge: number, httpOnly = true) =>
     `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAge}; SameSite=Lax${deps.secureCookies ? '; Secure' : ''}${httpOnly ? '; HttpOnly' : ''}`;
   const getCookie = (c: { req: { header(name: string): string | undefined } }, name: string) => {
@@ -130,9 +137,8 @@ export function createApp(deps: AppDeps) {
     if (authEnabled && !getSession(c)) {
       return c.redirect('/');
     }
-    const publicDir = deps.publicDir ?? './public';
     try {
-      const html = await readFile(join(publicDir, 'app.html'), 'utf8');
+      const html = await readFile(join(root, 'index.html'), 'utf8');
       return c.html(html);
     } catch {
       return c.redirect('/');
@@ -292,7 +298,7 @@ export function createApp(deps: AppDeps) {
     }
   });
 
-  app.use('/*', serveStatic({ root: deps.publicDir ?? './public' }));
+  app.use('/*', serveStatic({ root }));
   app.notFound((c) => c.json({ error: 'Not found.' }, 404));
 
   return app;

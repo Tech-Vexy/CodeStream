@@ -1,0 +1,375 @@
+/* ---------------------------------------------------------------------------
+ * Shared components
+ * ------------------------------------------------------------------------ */
+
+/* Buttons ---------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 560;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 16px;
+  height: 38px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.08s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #9587ff, #7a68f2);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 6px 20px -6px rgba(122, 104, 242, 0.55);
+}
+.btn-primary:hover {
+  background: linear-gradient(180deg, #a396ff, #8675f6);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.btn-secondary:hover {
+  background: var(--surface-3);
+  border-color: rgba(148, 163, 196, 0.36);
+}
+
+.btn-ghost {
+  color: var(--text-2);
+}
+.btn-ghost:hover {
+  color: var(--text);
+  background: rgba(148, 163, 196, 0.08);
+}
+
+.btn-github {
+  background: #f4f6fb;
+  color: #0b0d12;
+  font-weight: 600;
+}
+.btn-github:hover {
+  background: #fff;
+}
+
+.btn-lg {
+  height: 46px;
+  padding: 0 22px;
+  font-size: 15px;
+  border-radius: var(--r-md);
+}
+.btn-sm {
+  height: 30px;
+  padding: 0 11px;
+  font-size: 13px;
+}
+
+/* Inputs ----------------------------------------------------------------- */
+.field {
+  display: grid;
+  gap: 7px;
+}
+.field > label {
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--text-2);
+  letter-spacing: 0.01em;
+}
+
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 0 13px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.input::placeholder {
+  color: var(--text-3);
+}
+.input:hover {
+  border-color: rgba(148, 163, 196, 0.36);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--surface);
+}
+
+/* Pills ------------------------------------------------------------------ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--r-full);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.pill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.pill.ready {
+  color: #6ee7b7;
+  background: var(--ok-soft);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+.pill.running {
+  color: #93c5fd;
+  background: rgba(96, 165, 250, 0.12);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+.pill.running::before {
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+.pill.queued {
+  color: #c4b5fd;
+  background: var(--accent-soft);
+  border-color: rgba(139, 124, 246, 0.3);
+}
+.pill.failed {
+  color: #fca5a5;
+  background: var(--danger-soft);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Severity tags ---------------------------------------------------------- */
+.sev {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sev.high {
+  color: #fda4af;
+  background: rgba(244, 63, 94, 0.14);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+}
+.sev.medium {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.13);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+.sev.low {
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+}
+
+/* Cards ------------------------------------------------------------------ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Progress ---------------------------------------------------------------- */
+.progress {
+  appearance: none;
+  height: 6px;
+  width: 100%;
+  border-radius: var(--r-full);
+  background: rgba(148, 163, 196, 0.14);
+  overflow: hidden;
+}
+.progress::-webkit-progress-bar {
+  background: transparent;
+}
+.progress::-webkit-progress-value {
+  background: var(--grad);
+  border-radius: var(--r-full);
+  transition: width 0.4s ease;
+}
+.progress::-moz-progress-bar {
+  background: var(--grad);
+  border-radius: var(--r-full);
+}
+.progress[indeterminate],
+.progress-indeterminate {
+  background: linear-gradient(90deg, rgba(148, 163, 196, 0.1) 33%, rgba(139, 124, 246, 0.5) 50%, rgba(148, 163, 196, 0.1) 66%);
+  background-size: 300% 100%;
+  animation: indeterminate 1.4s linear infinite;
+}
+@keyframes indeterminate {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* Spinner ----------------------------------------------------------------- */
+.spinner {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid rgba(148, 163, 196, 0.25);
+  border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Skeleton shimmer -------------------------------------------------------------- */
+.skeleton {
+  display: inline-block;
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, rgba(148, 163, 196, 0.08) 25%, rgba(148, 163, 196, 0.17) 37%, rgba(148, 163, 196, 0.08) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* Modal ------------------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--overlay);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  animation: fade-in 0.16s ease;
+}
+.modal {
+  width: min(440px, 100%);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+  animation: pop-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.modal h2 {
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+.modal > p {
+  color: var(--text-2);
+  font-size: 13.5px;
+  margin-bottom: 16px;
+}
+.modal code {
+  background: var(--bg-soft);
+  border: 1px solid var(--hairline);
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+/* Inline code chips in prose ---------------------------------------------- */
+.prose code {
+  background: rgba(139, 124, 246, 0.12);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 124, 246, 0.22);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.paths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.paths code {
+  background: var(--bg-soft);
+  border: 1px solid var(--hairline);
+  color: var(--text-2);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 11.5px;
+}
+
+/* Empty / error states ----------------------------------------------------- */
+.error-box {
+  background: var(--danger-soft);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  font-size: 13.5px;
+}
+.warnings {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: #fde68a;
+}
+.warnings li {
+  background: var(--warn-soft);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: var(--r-sm);
+  padding: 7px 12px;
+}

@@ -1,10 +1,11 @@
 node_modules/
 dist/
+web-dist/
+web/node_modules/
 .env
 .env.*
 !.env.example
 *.log
 coverage/
-.next/
 .backboard/
 tsconfig.tsbuildinfo

@@ -1,0 +1,123 @@
+/* ---------------------------------------------------------------------------
+ * App shell: top bar + layout scaffolding
+ * ------------------------------------------------------------------------ */
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 clamp(16px, 4vw, 32px);
+  height: 60px;
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(10, 12, 16, 0.78);
+  backdrop-filter: blur(14px);
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  min-width: 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 15.5px;
+  letter-spacing: -0.01em;
+}
+
+.logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #0d1017;
+  border: 1px solid rgba(139, 124, 246, 0.4);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 18px -4px rgba(139, 124, 246, 0.55);
+}
+.logo svg {
+  width: 15px;
+  height: 15px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-link {
+  padding: 7px 12px;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  font-weight: 520;
+  color: var(--text-2);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.nav-link:hover {
+  color: var(--text);
+  background: rgba(148, 163, 196, 0.08);
+}
+.nav-link.active {
+  color: var(--text);
+  background: rgba(148, 163, 196, 0.1);
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 6px 5px 6px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-full);
+  background: var(--surface);
+}
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.user-login {
+  font-size: 13px;
+  font-weight: 560;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-signout {
+  font-size: 12.5px;
+  color: var(--text-3);
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.btn-signout:hover {
+  color: var(--text);
+  background: rgba(148, 163, 196, 0.1);
+}
+
+@media (max-width: 720px) {
+  .nav-links {
+    display: none;
+  }
+}

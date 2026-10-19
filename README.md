@@ -32,7 +32,7 @@ AI coding agents (such as Claude Code, Cursor, GitHub Copilot, Codex, and Devin)
 ```mermaid
 flowchart TD
     subgraph Client ["Client / Browser"]
-        UI["Web UI (Vanilla JS & CSS)"]
+        UI["Web UI (React SPA, Vite)"]
         AudioPlayer["HTML5 Audio Player"]
     end
 
@@ -141,12 +141,25 @@ flowchart TD
 
 ---
 
+## Screenshots
+
+| Landing page | Dashboard |
+| :--- | :--- |
+| ![CodeStream landing page](docs/screenshots/landing.png) | ![CodeStream dashboard](docs/screenshots/dashboard.png) |
+
+**Cast detail** — waveform player, narration transcript, grounded Q&A, and the full analysis report:
+
+![Cast detail with waveform player and Q&A](docs/screenshots/cast-detail.png)
+
+---
+
 ## Tech Stack
 
 | Layer | Technology | Purpose |
 | :--- | :--- | :--- |
 | **Runtime** | Node.js (>= 22) | Modern ES modules, native fetch, streams, and crypto |
 | **Server Framework** | [Hono](https://hono.dev/) | High-performance, lightweight web server and REST API |
+| **Web Frontend** | [React 19](https://react.dev) + [Vite](https://vite.dev) | Landing page and dashboard SPA, served same-origin from the Hono server |
 | **Workflow Engine** | [Temporal TypeScript SDK](https://temporal.io/) | Fault-tolerant distributed workflows and activity retries |
 | **AI Framework** | [Mastra](https://mastra.ai/) | Multi-agent orchestration, structured outputs, prompt management |
 | **Model** | Google Gemma 4 31B (`google/gemma-4-31b-it`) | Codebase analysis, diff review, synthesis, and scripting |
@@ -215,7 +228,7 @@ The Temporal Web UI will be available at `http://localhost:8233`.
 
 ### Running CodeStream
 
-Run the API server and the background worker in separate terminal windows:
+Run the API server, the background worker, and (optionally) the web UI dev server in separate terminal windows:
 
 #### Terminal 1: Web & API Server
 ```bash
@@ -229,7 +242,28 @@ npm run dev:worker
 ```
 The worker will begin polling the `codestream` task queue for jobs.
 
-Open your browser at **`http://localhost:3000`** to start creating casts!
+#### Terminal 3 (hot-reloading web UI)
+```bash
+npm run dev:web
+```
+Vite serves the React SPA on `http://localhost:5173` and proxies `/api`, `/auth` and `/healthz` to `localhost:3000`
+(set `CODESTREAM_WEB_PORT` if your API runs on a different port).
+
+Open your browser at **`http://localhost:5173`** while developing, or **`http://localhost:3000`** to use the previously
+built bundle (`npm run build:web`).
+
+---
+
+### Web Frontend
+
+The dashboard and landing page are a React 19 SPA built with Vite, living under `web/`:
+
+- `npm run dev:web` — Vite dev server with API proxy (hot reload)
+- `npm run build:web` — production bundle into `web-dist/`, served same-origin by the Hono server
+- Styling is a hand-rolled design system (`web/src/styles/*.css`) built on CSS custom properties — no CSS framework
+
+The Hono server resolves the bundle root as `./web-dist` (override via the `publicDir` app dependency), so the SPA,
+REST API, GitHub OAuth flows, and `HTTP 206` audio streaming stay same-origin.
 
 ---
 
@@ -484,7 +518,7 @@ CodeStream includes a production-ready Render Blueprint in [`render.yaml`](./ren
 1. Push your repository to GitHub.
 2. In the [Render Dashboard](https://dashboard.render.com/), choose **New +** → **Blueprint**.
 3. Select your repository. Render will automatically configure two services:
-   - **`codestream-web`**: Web service serving Hono and the frontend dashboard with health check at `/healthz`.
+   - **`codestream-web`**: Web service that builds the React bundle (`npm run build:web`) and serves Hono + the SPA with health check at `/healthz`.
    - **`codestream-worker`**: Background worker running Temporal worker activities.
 4. Set the secret environment variables in the Render dashboard:
    - `MONGODB_URI`
@@ -501,10 +535,13 @@ CodeStream includes a production-ready Render Blueprint in [`render.yaml`](./ren
 
 ```text
 codecast/
-├── public/                 # Static web dashboard (HTML, CSS, modern JS)
-│   ├── app.js              # Single-page application logic and API client
-│   ├── index.html          # Main application markup
-│   └── styles.css          # Design system and layout
+├── web/                        # React SPA (Vite) — crafting the landing page & dashboard
+│   ├── src/
+│   │   ├── components/         # Design-system primitives, icons, waveform player
+│   │   ├── lib/                # API client, hooks, formatting
+│   │   ├── pages/              # Landing and dashboard (cast detail, generator)
+│   │   └── styles/             # CSS custom-property design system
+│   └── vite.config.ts          # Dev proxy & build config (outputs ../web-dist)
 ├── src/
 │   ├── audio/              # ElevenLabs text-to-speech & audio segmentation
 │   ├── auth/               # GitHub session sealing & token encryption
