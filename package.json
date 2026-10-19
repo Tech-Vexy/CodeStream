@@ -1,7 +1,7 @@
 {
   "name": "codestream",
   "version": "0.1.0",
-  "private": true,
+  "license": "MIT",
   "description": "Know what your coding agent built: codebase tours, commit-change reviews and narrated audio streams.",
   "type": "module",
   "engines": {

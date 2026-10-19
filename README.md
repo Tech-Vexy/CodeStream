@@ -10,6 +10,7 @@
 [![ElevenLabs](https://img.shields.io/badge/ElevenLabs-TTS-orange.svg)](https://elevenlabs.io/)
 [![Google Gemma](https://img.shields.io/badge/Gemma-Google%20AI-4285F4.svg)](https://ai.google.dev/)
 [![Tests](https://img.shields.io/badge/tests-vitest%20passing-success.svg)](https://vitest.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
@@ -519,6 +520,7 @@ codecast/
 │   ├── domain.ts           # Domain models and TypeScript interfaces
 │   └── instrument.ts       # Sentry performance and error instrumentation
 ├── test/                   # Vitest unit and integration test suites
+├── LICENSE                 # Open source MIT license
 ├── render.yaml             # Render infrastructure-as-code deployment blueprint
 ├── package.json            # Node.js dependencies and script definitions
 ├── tsconfig.json           # Base TypeScript compiler configuration
@@ -529,4 +531,4 @@ codecast/
 
 ## License
 
-Private / Proprietary. All rights reserved.
+This project is licensed under the [MIT License](LICENSE).
